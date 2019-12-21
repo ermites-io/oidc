@@ -169,7 +169,10 @@ func (jwk *jwk) Verify(input, sig []byte) error {
 	switch k := key.(type) {
 	case *rsa.PublicKey:
 		// hash input first..
-		hashed := hp.New().Sum(input)
+		hasher := hp.New()
+		hasher.Write(input)
+		hashed := hasher.Sum(nil)
+
 		// then verify
 		// XXX security risk here, as error is NOT a constant
 		// so any new external package could defeat our verification
@@ -188,7 +191,10 @@ func (jwk *jwk) Verify(input, sig []byte) error {
 		rbuf := sig[:hmark]
 		sbuf := sig[hmark:]
 
-		hashed := hp.New().Sum(input)
+		//hashed := hp.New().Sum(input)
+		hasher := hp.New()
+		hasher.Write(input)
+		hashed := hasher.Sum(nil)
 
 		r := &big.Int{}
 		s := &big.Int{}
