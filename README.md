@@ -1,2 +1,2 @@
 # oidc
-golang OpenID Connect safe helpers package attempt
+OpenID Connect Go helpers package
