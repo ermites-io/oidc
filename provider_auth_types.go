@@ -4,7 +4,7 @@ package oidc
 
 import (
 	"encoding/json"
-	"fmt"
+	//"fmt"
 	"io/ioutil"
 )
 
@@ -85,33 +85,42 @@ func parseOpenIdConfiguration(url string) (auth, token, issuer, jwks string, err
 	}
 
 	// this MUST be code
-	resptype, ok := oc["response_types_supported"].([]interface{}) // XXX we MUST have code inside or the provider is invalid.
+	//resptype, ok := oc["response_types_supported"].([]interface{}) // XXX we MUST have code inside or the provider is invalid.
+	_, ok = oc["response_types_supported"].([]interface{}) // XXX we MUST have code inside or the provider is invalid.
 	if !ok {
 		err = ErrParse
 		return
 		//panic(errors.New("weird response types"))
 	}
 
-	// we should be able to specify what other information we would need.
-	scopes := oc["scopes_supported"] // XXX MUST have openid if not the provider is invalid.
-
-	fmt.Printf("auth: %s / %T\n", auth, auth)
-	fmt.Printf("token: %s\n", token)
-	fmt.Printf("issuer: %s\n", issuer)
-	fmt.Printf("scope: %s\n", scopes)
-	fmt.Printf("jwks: %s / %T\n", jwks, jwks)
-
-	fmt.Printf("resptype: %s / %T\n", resptype, resptype)
-	for _, rtype := range resptype {
-		fmt.Printf("r: %s / %T\n", rtype, rtype)
-		// XXX TODO
-		/*
-			if strings.Compare(rtype, "code") == 0 {
-				// if we find code all good
-				return
-			}
-		*/
+	// TODO we should be able to specify what other information we would need.
+	//scopes, ok := oc["scopes_supported"] // XXX MUST have openid if not the provider is invalid.
+	_, ok = oc["scopes_supported"] // XXX MUST have openid if not the provider is invalid.
+	if !ok {
+		err = ErrParse
+		return
 	}
+
+	/*
+		fmt.Printf("auth: %s / %T\n", auth, auth)
+		fmt.Printf("token: %s\n", token)
+		fmt.Printf("issuer: %s\n", issuer)
+		fmt.Printf("scope: %s\n", scopes)
+		fmt.Printf("jwks: %s / %T\n", jwks, jwks)
+
+		fmt.Printf("resptype: %s / %T\n", resptype, resptype)
+
+		for _, rtype := range resptype {
+			fmt.Printf("r: %s / %T\n", rtype, rtype)
+			// XXX TODO
+			//
+			//	if strings.Compare(rtype, "code") == 0 {
+			//	// if we find code all good
+			//		return
+			//	}
+			//
+		}
+	*/
 
 	//fmt.Printf("PROUT: %v\n", oc)
 	return
