@@ -97,7 +97,7 @@ func newIdToken(idtoken string) (*IdToken, error) {
 	var claims ic
 	var sig is
 
-	fmt.Printf("NEW ID TOKEN!!\n")
+	//fmt.Printf("NEW ID TOKEN!!\n")
 
 	//tok := strings.SplitN(idtoken, ".", 3)
 	tok := strings.Split(idtoken, ".")

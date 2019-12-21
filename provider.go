@@ -98,7 +98,7 @@ func (p *Provider) tokenRequest(ctx context.Context, grantType, code string) (*t
 	}
 	defer r.Body.Close()
 
-	fmt.Printf("Token Body:\n%s\n", tokenBody)
+	//fmt.Printf("Token Body:\n%s\n", tokenBody)
 
 	t, err := parseTokenResponse(tokenBody)
 	if err != nil {
@@ -262,7 +262,7 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 		fmt.Printf("state '%s' is not valid: %v\n", state, err)
 		return nil, nilstr, err
 	}
-	fmt.Printf("nonce found: %s\n", nonce)
+	//fmt.Printf("nonce found: %s\n", nonce)
 
 	// yes so..
 	// TODO: need to give back id token, access token, refresh token (if any)

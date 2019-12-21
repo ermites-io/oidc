@@ -36,10 +36,9 @@ func (jm jwkmap) Verify(idt *IdToken) error {
 	input = append(input, []byte(".")...)
 	input = append(input, idt.claims.raw...)
 
-	fmt.Printf("VERIFYING INPUT: %s\n", input)
+	//fmt.Printf("VERIFYING INPUT: %s\n", input)
 
-	jwk.Verify(input, idt.sig.blob)
-	return nil
+	return jwk.Verify(input, idt.sig.blob)
 }
 
 func NewJwkMap() (m jwkmap) {
