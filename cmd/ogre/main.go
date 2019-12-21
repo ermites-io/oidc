@@ -7,6 +7,8 @@ package main
 
 import (
 	"fmt"
+
+	"github.com/ermites-io/oidc"
 )
 
 const (
@@ -35,7 +37,7 @@ type jwkEnv struct {
 func main() {
 	fmt.Printf("oauth dev service\n")
 
-	google, err := NewProvider("google", "./google-openid-configuration")
+	google, err := oidc.NewProvider("google", "./google-openid-configuration")
 	if err != nil {
 		panic(err)
 	}

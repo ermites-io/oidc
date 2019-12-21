@@ -68,6 +68,10 @@ func NewProvider(name, urlOidcConf string) (*Provider, error) {
 	return &oidc, nil
 }
 
+func (p *Provider) GetName() string {
+	return p.name
+}
+
 func (p *Provider) buildFormToken(grantType, code string) url.Values {
 	v := url.Values{}
 	v.Set("grant_type", grantType)

@@ -4,12 +4,11 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
 
+	"github.com/ermites-io/oidc"
 	"github.com/google/uuid"
-	"golang.org/x/crypto/sha3"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -18,30 +17,22 @@ var (
 )
 
 type OidcService struct {
-	providers map[string]*OidcProvider
-	//providerHash map[string]*OidcProvider
+	providers map[string]*oidc.Provider
 
 	loginFailUrl string
 	loginOkUrl   string
 }
 
-/*
-func sha256b64(str string) ([]byte, string) {
-	tmpHash := sha3.Sum256([]byte(str))
-	return tmpHash[:], base64.StdEncoding.EncodeToString(tmpHash[:])
-}
-*/
-
-func NewOidcService(providers ...*OidcProvider) *OidcService {
-	p := make(map[string]*OidcProvider) // might be unnecessary
-	//ph := make(map[string]*OidcProvider)
+func NewOidcService(providers ...*oidc.Provider) *OidcService {
+	p := make(map[string]*oidc.Provider) // might be unnecessary
 
 	for i, v := range providers {
 		// XXX to clean
-		s256hex := sha256hex(v.name)
-		//p[v.name] = v // might not be necessary and avoid collision we never know
-		p[s256hex] = v
-		fmt.Printf("[%d] register provider: %s / %s\n", i, v.name, s256hex)
+		//s256hex := sha256hex(v.name)
+		p[v.name] = v // might not be necessary and avoid collision we never know
+		//p[s256hex] = v
+		fmt.Printf("[%d] register provider: %s\n", i, v.name)
+		//fmt.Printf("[%d] register provider: %s / %s\n", i, v.name, s256hex)
 	}
 
 	// ok our oidc service is ready.
@@ -76,21 +67,6 @@ func GetStateCookie(ctx context.Context) string {
 	return stateCookie[0]
 }
 
-/*
-func (o *OidcService) Redirect(ctx context.Context, in *UrlData) (out *RedirectData, err error) {
-	url := in.GetUrl()
-	fmt.Printf("redirect: %s\n", url)
-	//return nil, ErrRedirect
-	return &RedirectData{Url: url}, ErrRedirect
-}
-
-func (o *OidcService) RedirectSession(ctx context.Context, in *UrlData) (out *RedirectSessionData, err error) {
-	url := in.GetUrl()
-	fmt.Printf("redirect-session: %s\n", in.GetUrl())
-	return &RedirectSessionData{Id: uuid.New().String(), Url: url}, ErrRedirectSession
-}
-*/
-
 // this function setup the environement and pass it to the
 // forwardresponsehandler (the reply type contains our stuff) if we error here, unless we know exactly what/where to
 // return and handle it in the error handler, if we error here the
@@ -102,9 +78,10 @@ func (o *OidcService) Login(ctx context.Context, in *IdpRequest) (out *SessionId
 	// query a state and build the URL
 	fmt.Printf("PROVIDER: %s\n", provider)
 
-	s256hex := sha256hex(provider)
+	//s256hex := sha256hex(provider)
 
-	p, ok := o.providers[s256hex]
+	//p, ok := o.providers[s256hex]
+	p, ok := o.providers[provider]
 	if !ok {
 		fmt.Printf("unknown provider: %s\n", provider)
 		err = ErrProviderAuthFailed
@@ -160,7 +137,7 @@ func (o *OidcService) Callback(ctx context.Context, in *IdpResponse) (out *Sessi
 	// Unpack Envelope
 	// TODO: envelope.Unpack()
 	// XXX is this a security risk?
-	se, err := Unpack(cookie)
+	se, err := oidc.Unpack(cookie)
 	if err != nil {
 		return nil, ErrProviderAuthFailed
 	}
