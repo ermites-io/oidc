@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"time"
 
+	"github.com/ermites-io/oidc/token"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -145,6 +146,6 @@ func (pa *ProviderAuth) ValidateStateWithData(cookie, state string, t time.Durat
 	return sd.Nonce, sd.Userdata, nil
 }
 
-func (pa *ProviderAuth) VerifyIdToken(idt *IdToken) error {
+func (pa *ProviderAuth) VerifyIdToken(idt *token.Id) error {
 	return pa.jwk.Verify(idt)
 }

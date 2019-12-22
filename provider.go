@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ermites-io/oidc/token"
 	"golang.org/x/crypto/hkdf"
 	"golang.org/x/crypto/sha3"
-	//"github.com/ermites-io/oidc/token"
 )
 
 type Provider struct {
@@ -234,7 +234,7 @@ func (p *Provider) RequestIdentityParams(nonce string) (cookieValue, cookiePath,
 	return
 }
 
-func (p *Provider) ValidateIdToken(nonce string, idt *IdToken) error {
+func (p *Provider) ValidateIdToken(nonce string, idt *token.Id) error {
 	// signed Idp nonce vs state embedded nonce
 	if nonce != idt.Claims.Nonce {
 		return fmt.Errorf("invalid state nonce: %s vs idt.Nonce: %s", nonce, idt.Claims.Nonce)
@@ -257,8 +257,14 @@ func (p *Provider) ValidateIdToken(nonce string, idt *IdToken) error {
 
 // XXX TODO: this is the real authentication
 //func (o *Provider) ValidateIdentityParams(code string, sv *OidcStateValue) (accessToken, idToken string, err error) {
-func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*IdToken, string, error) {
+//func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.Jwt, string, error) {
+//func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.Access, string, error) {
+//func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.EndpointResponse, string, error) {
+func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.Id, string, error) {
 	var nilstr string
+
+	// grantType for authorization_code flows
+	// code MUST be part of the grand types
 
 	grantType := "authorization_code"
 
@@ -281,7 +287,7 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 
 	//fmt.Printf("ID TOKEN:\n%s\n", t.IdToken)
 
-	idt, err := newIdToken(t.IdToken)
+	idt, err := token.Parse(t.IdToken)
 	if err != nil {
 		//panic(err)
 		return nil, nilstr, err

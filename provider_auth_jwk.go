@@ -15,6 +15,8 @@ import (
 	"io"
 	"math/big"
 	"net/http"
+
+	"github.com/ermites-io/oidc/token"
 )
 
 type jwk struct {
@@ -24,7 +26,7 @@ type jwk struct {
 
 type jwkmap map[string]*jwk
 
-func (jm jwkmap) Verify(idt *IdToken) error {
+func (jm jwkmap) Verify(idt *token.Id) error {
 	var input []byte
 
 	jwk, ok := jm[idt.Hdr.Kid]

@@ -50,6 +50,21 @@ func parseTokenResponse(buffer []byte) (*tokenResponse, error) {
 	return &t, err
 }
 
+type providerConfiguration struct {
+	// REQUIRED
+	Issuer                           string   `json:"issuer"`                                // REQUIRED
+	AuthorizationEndpoint            string   `json:"authorization_endpoint"`                // REQUIRED
+	TokenEndpoint                    string   `json:"token_endpoint"`                        // REQUIRED
+	UserinfoEndpoint                 string   `json:"userinfo_endpoint"`                     // REQUIRED
+	JwksURI                          string   `json:"jwks_uri"`                              // REQUIRED
+	ResponseTypeSupported            []string `json:"response_types_supported"`              // REQUIRED
+	SubjectTypesSupported            []string `json:"subject_types_supported"`               // REQUIRED
+	IdTokenSigningAlgValuesSupported []string `json:"id_token_signing_alg_values_supported"` // REQUIRED
+	RegistrationEndpoint             string   `json:"registration_endpoint"`                 // RECOMMENDED ONLY
+	ScopeSupported                   string   `json:"scope_supported"`                       // RECOMMENDED ONLY
+	ClaimsSupported                  string   `json:"claims_supported"`                      // RECOMMENDED ONLY
+}
+
 // TODO:
 func parseOpenIdConfiguration(url string) (auth, token, issuer, jwks string, err error) {
 	var ok bool

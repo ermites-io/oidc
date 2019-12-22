@@ -41,13 +41,13 @@ type Claims struct {
 	Raw []byte
 
 	// claims
-	Sub           string `json:"sub"`
-	Iss           string `json:"iss"`
-	Aud           string `json:"aud"`
-	Exp           int    `json:"exp"`
-	Iat           int    `json:"iat"`
+	Sub           string `json:"sub"` // REQUIRED
+	Iss           string `json:"iss"` // REQUIRED
+	Aud           string `json:"aud"` // REQUIRED
+	Exp           int    `json:"exp"` // REQUIRED
+	Iat           int    `json:"iat"` // REQUIRED
 	Email         string `json:"email"`
-	Nonce         string `json:"nonce"`
+	Nonce         string `json:"nonce"`          // MUST
 	EmailVerified bool   `json:"email_verified"` // Addition to provide some additionnal "security" and avoid abuse of oauth for login (optional)
 	Azp           string `json:"azp"`            // Addition TBD
 }
@@ -76,14 +76,14 @@ func (s Signature) String() string {
 	return fmt.Sprintf("SIG: '%s'\n", s.Raw)
 }
 
-type Token struct {
+type Id struct {
 	Hdr    Header    // Idtoken Header
 	Claims Claims    // Idtoken Claims
 	Sig    Signature // Idtoken signature
 	Raw    []byte    // the raw token..
 }
 
-func (idt *Token) String() string {
+func (idt *Id) String() string {
 	return fmt.Sprintf("%s\n%s\n%s\n",
 		idt.Hdr,
 		idt.Claims,
@@ -92,7 +92,7 @@ func (idt *Token) String() string {
 
 // FieldFunc() or Split()
 // XXX TODO should be renamed to parseSafeIdToken
-func Parse(token string) (*Token, error) {
+func Parse(token string) (*Id, error) {
 	var hdr Header
 	var claims Claims
 	var sig Signature
@@ -153,7 +153,7 @@ func Parse(token string) (*Token, error) {
 	sig.Blob = sigBin
 	sig.Raw = []byte(tok[2])
 
-	it := Token{
+	it := Id{
 		Hdr:    hdr,
 		Claims: claims,
 		Sig:    sig,
