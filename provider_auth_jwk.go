@@ -27,18 +27,18 @@ type jwkmap map[string]*jwk
 func (jm jwkmap) Verify(idt *IdToken) error {
 	var input []byte
 
-	jwk, ok := jm[idt.hdr.Kid]
+	jwk, ok := jm[idt.Hdr.Kid]
 	if !ok {
-		return fmt.Errorf("no jwk for kid: %s", idt.hdr.Kid)
+		return fmt.Errorf("no jwk for kid: %s", idt.Hdr.Kid)
 	}
 
-	input = append(input, idt.hdr.raw...)
+	input = append(input, idt.Hdr.Raw...)
 	input = append(input, []byte(".")...)
-	input = append(input, idt.claims.raw...)
+	input = append(input, idt.Claims.Raw...)
 
 	//fmt.Printf("VERIFYING INPUT: %s\n", input)
 
-	return jwk.Verify(input, idt.sig.blob)
+	return jwk.Verify(input, idt.Sig.Blob)
 }
 
 func NewJwkMap() (m jwkmap) {

@@ -15,6 +15,7 @@ import (
 
 	"golang.org/x/crypto/hkdf"
 	"golang.org/x/crypto/sha3"
+	//"github.com/ermites-io/oidc/token"
 )
 
 type Provider struct {
