@@ -11,4 +11,5 @@ const (
 	ErrUnsupported  = Error("unsupported format")
 	ErrInvalid      = Error("invalid input")
 	ErrInvalidState = Error("invalid state")
+	ErrNetwork      = Error("network error")
 )

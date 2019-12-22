@@ -1,6 +1,6 @@
 // +build go1.12
 
-package oidc
+package token
 
 import (
 	"encoding/base64"
@@ -22,7 +22,7 @@ import (
 // none => EXIT |
 //
 // unsecured JWS == len sig == 0
-type IdTokenHeader struct {
+type Header struct {
 	// raw: base64
 	Raw []byte
 
@@ -31,12 +31,12 @@ type IdTokenHeader struct {
 	Alg string `json:"alg"`
 }
 
-func (h IdTokenHeader) String() string {
+func (h Header) String() string {
 	return fmt.Sprintf("HEADER:\n\talg: '%s'\n\tkid: '%s'\n", h.Alg, h.Kid)
 }
 
 // Claims
-type IdTokenClaims struct {
+type Claims struct {
 	// raw: base64
 	Raw []byte
 
@@ -52,7 +52,7 @@ type IdTokenClaims struct {
 	Azp           string `json:"azp"`            // Addition TBD
 }
 
-func (h IdTokenClaims) String() string {
+func (h Claims) String() string {
 	return fmt.Sprintf("CLAIMS:\n\tsub: '%s'\n\tiss: '%s'\n\taud: '%s'\n\texp: '%d'\n\tiat: '%d'\n\temail: '%s'\n\tnonce: '%s'\n",
 		h.Sub,
 		h.Iss,
@@ -64,7 +64,7 @@ func (h IdTokenClaims) String() string {
 }
 
 // signature
-type IdTokenSignature struct {
+type Signature struct {
 	// raw: base64
 	Raw []byte
 
@@ -72,18 +72,18 @@ type IdTokenSignature struct {
 	Blob []byte
 }
 
-func (s IdTokenSignature) String() string {
+func (s Signature) String() string {
 	return fmt.Sprintf("SIG: '%s'\n", s.Raw)
 }
 
-type IdToken struct {
-	Hdr    IdTokenHeader    // Idtoken Header
-	Claims IdTokenClaims    // Idtoken Claims
-	Sig    IdTokenSignature // Idtoken signature
-	Raw    string           // the raw token..
+type Token struct {
+	Hdr    Header    // Idtoken Header
+	Claims Claims    // Idtoken Claims
+	Sig    Signature // Idtoken signature
+	Raw    []byte    // the raw token..
 }
 
-func (idt *IdToken) String() string {
+func (idt *Token) String() string {
 	return fmt.Sprintf("%s\n%s\n%s\n",
 		idt.Hdr,
 		idt.Claims,
@@ -92,15 +92,15 @@ func (idt *IdToken) String() string {
 
 // FieldFunc() or Split()
 // XXX TODO should be renamed to parseSafeIdToken
-func newIdToken(idtoken string) (*IdToken, error) {
-	var hdr IdTokenHeader
-	var claims IdTokenClaims
-	var sig IdTokenSignature
+func Parse(token string) (*Token, error) {
+	var hdr Header
+	var claims Claims
+	var sig Signature
 
 	//fmt.Printf("NEW ID TOKEN!!\n")
 
 	//tok := strings.SplitN(idtoken, ".", 3)
-	tok := strings.Split(idtoken, ".")
+	tok := strings.Split(token, ".")
 
 	if len(tok) != 3 {
 		//return nil, errors.New("invalid token for us")
@@ -153,10 +153,12 @@ func newIdToken(idtoken string) (*IdToken, error) {
 	sig.Blob = sigBin
 	sig.Raw = []byte(tok[2])
 
-	it := IdToken{
+	it := Token{
 		Hdr:    hdr,
 		Claims: claims,
 		Sig:    sig,
+
+		Raw: []byte(token),
 	}
 	return &it, nil
 }

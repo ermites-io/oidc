@@ -92,6 +92,11 @@ func (p *Provider) tokenRequest(ctx context.Context, grantType, code string) (*t
 		return nil, err
 	}
 
+	// replied with 200 ?
+	if r.StatusCode != 200 {
+		return nil, ErrNetwork
+	}
+
 	tokenBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, err
@@ -230,18 +235,18 @@ func (p *Provider) RequestIdentityParams(nonce string) (cookieValue, cookiePath,
 
 func (p *Provider) ValidateIdToken(nonce string, idt *IdToken) error {
 	// signed Idp nonce vs state embedded nonce
-	if nonce != idt.claims.Nonce {
-		return fmt.Errorf("invalid state nonce: %s vs idt.Nonce: %s", nonce, idt.claims.Nonce)
+	if nonce != idt.Claims.Nonce {
+		return fmt.Errorf("invalid state nonce: %s vs idt.Nonce: %s", nonce, idt.Claims.Nonce)
 	}
 
 	// Claims aud vs issuer
-	if p.clientId != idt.claims.Aud {
-		return fmt.Errorf("invalid aud: %s vs clientId: %s", idt.claims.Aud, p.clientId)
+	if p.clientId != idt.Claims.Aud {
+		return fmt.Errorf("invalid aud: %s vs clientId: %s", idt.Claims.Aud, p.clientId)
 	}
 
 	// claims iss vs issuer
-	if p.issuer != idt.claims.Iss {
-		return fmt.Errorf("invalid iss: %s vs issuer: %s", idt.claims.Iss, p.issuer)
+	if p.issuer != idt.Claims.Iss {
+		return fmt.Errorf("invalid iss: %s vs issuer: %s", idt.Claims.Iss, p.issuer)
 	}
 
 	// TODO: Expiration

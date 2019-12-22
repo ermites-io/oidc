@@ -10,11 +10,15 @@ import (
 
 type tokenResponse struct {
 	AccessToken  string `json:"access_token"`
-	IdToken      string `json:"id_token"`
-	ExpireIn     int    `json:"expires_in"`
 	TokenType    string `json:"token_type"`
 	RefreshToken string `json:"refresh_token"`
-	Scope        string `json:"scope"`
+	ExpireIn     int    `json:"expires_in"`
+	IdToken      string `json:"id_token"`
+	Scope        string `json:"scope"` // not enforced in openid
+}
+
+type tokenError struct {
+	Error string `json:"error"`
 }
 
 func (t *tokenResponse) Valid() bool {
