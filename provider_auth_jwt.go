@@ -1,12 +1,13 @@
 // +build go1.12
+// +build dontbuildme
 
 package oidc
 
 import (
 	"encoding/base64"
-	"encoding/json"
-	"fmt"
-	"strings"
+	//"encoding/json"
+	//"fmt"
+	//"strings"
 )
 
 // alg
