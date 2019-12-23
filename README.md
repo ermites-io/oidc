@@ -82,6 +82,8 @@ First parse the configuration (public) provided by your identity provider and in
 ```go
 google, err := oidc.NewProvider("google", "google-openid-configuration")
 // handle error
+microsoft, err := oidc.NewProvider("microsoft", ms-openid-configuration")
+// handle error
 ```
 
 then add your provider auth information:
@@ -89,13 +91,15 @@ then add your provider auth information:
 ```
 err = google.SetAuth("clientid.idp.com", "clientsecret2341321421", "https://login.myservice.io/callback")
 // handle error
+err = microsoft.SetAuth("microsoftclientid.com", "myothercliensecret", "https://login.myservice.io/callback")
+// handle error
 ```
 
 this part is your infrastructure/app specific, register your providers in your context.. (depends on your implementation obviously :))
 example:
 
 ```go
-svc := NewOidcService(google, microsoft, ping)
+svc := NewOidcService(google, microsoft, ...
 
 ```
 
