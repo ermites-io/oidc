@@ -50,12 +50,12 @@ func NewData(nonce string, userdata []byte) *Data {
 }
 
 // marshall
-func (sd *Data) pack() ([]byte, error) {
+func (sd *Data) Pack() ([]byte, error) {
 	return proto.Marshal(sd)
 }
 
 // unmarshal
-func unpackData(blob []byte) (*Data, error) {
+func UnpackData(blob []byte) (*Data, error) {
 	var sd Data
 	err := proto.Unmarshal(blob, &sd)
 	return &sd, err
@@ -99,7 +99,7 @@ func NewEnvelope(provider string) (*Envelope, error) {
 	}, nil
 }
 
-func (se *Envelope) seal(key, payload []byte) error {
+func (se *Envelope) Seal(key, payload []byte) error {
 	//var nilstr string
 	var ad []byte
 
@@ -129,7 +129,7 @@ func (se *Envelope) seal(key, payload []byte) error {
 	return nil
 }
 
-func (se *Envelope) open(key []byte) ([]byte, error) {
+func (se *Envelope) Open(key []byte) ([]byte, error) {
 	var ad []byte
 
 	salt := se.Salt
@@ -156,7 +156,7 @@ func (se *Envelope) open(key []byte) ([]byte, error) {
 	return aead.Open(nil, nonce, se.Payload, ad)
 }
 
-func pack(se *Envelope) (string, error) {
+func Pack(se *Envelope) (string, error) {
 	//func (se *StateEnvelope) Pack() (string, error) {
 	var nilstr string
 
@@ -170,7 +170,7 @@ func pack(se *Envelope) (string, error) {
 	return s64, nil
 }
 
-func unpack(envelope string) (*Envelope, error) {
+func Unpack(envelope string) (*Envelope, error) {
 	var se Envelope
 
 	spb, err := base64.RawURLEncoding.DecodeString(envelope)
