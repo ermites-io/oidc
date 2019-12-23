@@ -65,11 +65,11 @@ like:
 - etc..
 
 ```go
-	google, err := NewProvider("google", "google-openid-configuration")
-	// handle error
+google, err := NewProvider("google", "google-openid-configuration")
+// handle error
 
-	err = google.SetAuth("clientid.idp.com", "clientsecret2341321421", "https://login.myservice.io/callback")
-	// handle error
+err = google.SetAuth("clientid.idp.com", "clientsecret2341321421", "https://login.myservice.io/callback")
+// handle error
 ```
 
 now register your providers in your context.. (that depends on your implementation obviously :))
@@ -88,11 +88,11 @@ In your login with handler, whether it's a REST or gRPC etc.. (your
 implementation).
 
 ```go
-	// generate a random nonce value, this is an example
-	nonce := uuid.New().String()                                                                                              
+// generate a random nonce value, this is an example
+nonce := uuid.New().String()                                                                                              
 
-	cookieValue, cookiePath, authUrl, err := p.RequestIdentityParams(nonce)                                                   
-	// handle error
+cookieValue, cookiePath, authUrl, err := p.RequestIdentityParams(nonce)                                                   
+// handle error
 ```
 
 that handler provides you with a cookie to set, a path for that cookie and the
@@ -102,24 +102,24 @@ url where to redirect for your 302.
 ## Open ID Connect Callback URL Handler
 
 ```go
-	...
-	code := in.GetCode()          // get the code parameter
-	state := in.GetState()        // get the state parameter (hmac hex version of the cookie state)
-	oidcerror := in.GetError()    // get the error parameter if any.
-	oErrorDesc := in.GetErrorDescription() // if any...
-	...
-	// get the cookie there.. 
-	cookie := GetStateCookie() // get the cookie
-	...
-	// unpack the envelope for the cookie payload
-	se, err := oidc.Unpack(cookie)
-	// handle error 
+...
+code := in.GetCode()          // get the code parameter
+state := in.GetState()        // get the state parameter (hmac hex version of the cookie state)
+oidcerror := in.GetError()    // get the error parameter if any.
+oErrorDesc := in.GetErrorDescription() // if any...
+...
+// get the cookie there.. 
+cookie := GetStateCookie() // get the cookie
+...
+// unpack the envelope for the cookie payload
+se, err := oidc.Unpack(cookie)
+// handle error 
 
-	// get the provider to match in your context
-	provider := se.GetProvider()
-	// retrieve the provider context registered earlier and provide it the
-	params you received in your call back
-	idtoken, accesstoken, err = p.ValidateIdentityParams(ctx, code, cookie, state)
+// get the provider to match in your context
+provider := se.GetProvider()
+// retrieve the provider context registered earlier and provide it the
+params you received in your call back
+idtoken, accesstoken, err = p.ValidateIdentityParams(ctx, code, cookie, state)
 ```
 
 and there you are authenticated to your IdP the token request is handled by the
