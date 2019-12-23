@@ -89,9 +89,9 @@ microsoft, err := oidc.NewProvider("microsoft", ms-openid-configuration")
 then add your provider auth information:
 
 ```
-err = google.SetAuth("clientid.idp.com", "clientsecret2341321421", "https://login.myservice.io/callback")
+err = google.SetAuth("gclientid1", "googleclientsecret2", "https://login.myservice.io/cb")
 // handle error
-err = microsoft.SetAuth("microsoftclientid.com", "myothercliensecret", "https://login.myservice.io/callback")
+err = microsoft.SetAuth("msclientid", "mscliensecret", "https://login.myservice.io/cb")
 // handle error
 ```
 
