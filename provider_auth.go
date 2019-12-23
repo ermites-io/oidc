@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"time"
 
+	"github.com/ermites-io/oidc/internal/state"
 	"github.com/ermites-io/oidc/token"
 	"golang.org/x/crypto/sha3"
 )
@@ -78,13 +79,13 @@ func (pa *ProviderAuth) StateWithData(provider, nonce string, userData []byte) (
 		return nilstr, nilstr, ErrInvalid
 	}
 
-	sd := newStateData(nonce, userData)
+	sd := state.NewData(nonce, userData)
 	data, err := sd.pack()
 	if err != nil {
 		return nilstr, nilstr, ErrInvalid
 	}
 
-	e, err := newStateEnvelope(provider)
+	e, err := state.NewEnvelope(provider)
 	if err != nil {
 		return nilstr, nilstr, ErrInvalid
 	}
@@ -95,7 +96,7 @@ func (pa *ProviderAuth) StateWithData(provider, nonce string, userData []byte) (
 	}
 
 	// envelope.Pack()
-	cookie, err := pack(e)
+	cookie, err := state.pack(e)
 	if err != nil {
 		return nilstr, nilstr, ErrInvalid
 	}
@@ -122,7 +123,7 @@ func (pa *ProviderAuth) ValidateStateWithData(cookie, state string, t time.Durat
 		return nilstr, nil, ErrInvalidState
 	}
 
-	se, err := Unpack(cookie)
+	se, err := state.Unpack(cookie)
 	if err != nil {
 		return nilstr, nil, err
 	}
@@ -132,7 +133,7 @@ func (pa *ProviderAuth) ValidateStateWithData(cookie, state string, t time.Durat
 		return nilstr, nil, err
 	}
 
-	sd, err := unpackStateData(data)
+	sd, err := state.unpackData(data)
 	if err != nil {
 		return nilstr, nil, err
 	}

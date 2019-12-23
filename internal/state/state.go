@@ -1,8 +1,8 @@
 // +build go1.12
 
-//go:generate protoc provider_auth_state.proto -I. --go_out=.
+//go:generate protoc state.proto -I. --go_out=.
 
-package oidc
+package state
 
 import (
 	"crypto/rand"
@@ -41,9 +41,9 @@ const (
 // first state data.
 //
 //
-func newStateData(nonce string, userdata []byte) *StateData {
+func NewData(nonce string, userdata []byte) *Data {
 
-	return &StateData{
+	return &Data{
 		Nonce:     nonce,
 		Timestamp: time.Now().Unix(),
 		Userdata:  userdata,
@@ -51,13 +51,13 @@ func newStateData(nonce string, userdata []byte) *StateData {
 }
 
 // marshall
-func (sd *StateData) pack() ([]byte, error) {
+func (sd *Data) pack() ([]byte, error) {
 	return proto.Marshal(sd)
 }
 
 // unmarshal
-func unpackStateData(blob []byte) (*StateData, error) {
-	var sd StateData
+func unpackData(blob []byte) (*Data, error) {
+	var sd Data
 	err := proto.Unmarshal(blob, &sd)
 	return &sd, err
 }
@@ -81,7 +81,7 @@ func UnpackStateData(blob []byte) (*StateData, error) {
 //
 //
 // an empty envelope
-func newStateEnvelope(provider string) (*StateEnvelope, error) {
+func NewEnvelope(provider string) (*Envelope, error) {
 	salt := make([]byte, 16)
 	if _, err := rand.Read(salt); err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func newStateEnvelope(provider string) (*StateEnvelope, error) {
 		return nil, err
 	}
 
-	return &StateEnvelope{
+	return &Envelope{
 		Provider: provider,
 		Salt:     salt,
 		Nonce:    nonce,
@@ -100,7 +100,7 @@ func newStateEnvelope(provider string) (*StateEnvelope, error) {
 	}, nil
 }
 
-func (se *StateEnvelope) seal(key, payload []byte) error {
+func (se *Envelope) seal(key, payload []byte) error {
 	//var nilstr string
 	var ad []byte
 
@@ -130,7 +130,7 @@ func (se *StateEnvelope) seal(key, payload []byte) error {
 	return nil
 }
 
-func (se *StateEnvelope) open(key []byte) ([]byte, error) {
+func (se *Envelope) open(key []byte) ([]byte, error) {
 	var ad []byte
 
 	salt := se.Salt
@@ -157,7 +157,7 @@ func (se *StateEnvelope) open(key []byte) ([]byte, error) {
 	return aead.Open(nil, nonce, se.Payload, ad)
 }
 
-func pack(se *StateEnvelope) (string, error) {
+func pack(se *Envelope) (string, error) {
 	//func (se *StateEnvelope) Pack() (string, error) {
 	var nilstr string
 
@@ -171,8 +171,8 @@ func pack(se *StateEnvelope) (string, error) {
 	return s64, nil
 }
 
-func Unpack(envelope string) (*StateEnvelope, error) {
-	var se StateEnvelope
+func unpack(envelope string) (*Envelope, error) {
+	var se Envelope
 
 	spb, err := base64.RawURLEncoding.DecodeString(envelope)
 	if err != nil {
