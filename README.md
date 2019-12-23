@@ -5,10 +5,16 @@ oidc
 
 An attempt at simple safe/secure OpenID Connect golang helpers package
 
-Note: while it works already, it is a STABILIZATION-CLEANUPTHESHIT phase, which means
-*WORK-IN-PROGRESS*, it will take several weeks to reach its first version and
-then will be improved an updated to handle slightly more problematic, yet
-commong use cases while trying to remain DEAD SIMPLE to use. 
+Note: while it works already, it is in a **opensource-stabilization-cleanup-alpha** phase, which means **WORK-IN-PROGRESS**. 
+Some more time is necessary to reach its first public version and will continue to be improved/fixed as needed.
+It will try to come common and slightly more problematic uses cases.
+
+This is in **NO WAY** an RFC OpenID yada yada stack or anything, it's pragmatic
+and it cover only a subset flows and features needed to implement secure login
+through a 3rd party identity provider implementing openid connect (like google,
+microsoft, ping federate, etc..).
+
+hopefully it will help others to solve that problem for their app/infrastructure/etc..
 
 Description
 ===========
@@ -21,6 +27,13 @@ This package try to provide handlers/helpers to deal with a secure "login with" 
 
 By only allowing the narrowed most common subset of params used and making sure they are safe/hard to attack, 
 simple to use & robust.
+
+Requirements
+============
+
+- go 1.12+
+- protobuf for serialization, but may be we'll change that
+- golang.org/x (crypto like sha3, xchacha20, etc..)
 
 
 How
@@ -56,50 +69,63 @@ It goes in three steps:
 
 ## Register 
 
-create your providers at your service start, in your service context, which
-handle sort of map url -> provider
+create your providers at your service start, in your service context, which handle sort of map url -> provider
 like: 
 
-- https://.../login/google -> google
-- https://.../login/microsoft -> microsoft
+- https://myservice/login/google -> "google"
+- https://myservice/login/microsoft -> "microsoft"
 - etc..
 
-```go
-google, err := NewProvider("google", "google-openid-configuration")
-// handle error
+First parse the configuration (public) provided by your identity provider and initialize the provider 
+(here the variable 'google').
 
+```go
+google, err := oidc.NewProvider("google", "google-openid-configuration")
+// handle error
+```
+
+then add your provider auth information:
+
+```
 err = google.SetAuth("clientid.idp.com", "clientsecret2341321421", "https://login.myservice.io/callback")
 // handle error
 ```
 
-now register your providers in your context.. (that depends on your implementation obviously :))
+this part is your infrastructure/app specific, register your providers in your context.. (depends on your implementation obviously :))
+example:
 
 ```go
 svc := NewOidcService(google, microsoft, ping)
 
 ```
 
-Note: this is an example you can check oidc-ogre to have an implementation / toy example
+Note: You can check oidc-ogre to have an implementation / toy example.
 
 
 ## Login Handler
 
-In your login with handler, whether it's a REST or gRPC etc.. (your
-implementation).
+You openid login handler will basically redirect to the identity provider
+authorization URL.
+In your login handler (whether it's REST or gRPC or..), generate a login request nonce, that will identify that login attempt. 
 
 ```go
 // generate a random nonce value, this is an example
-nonce := uuid.New().String()                                                                                              
+nonce := uuid.New().String()
 
-cookieValue, cookiePath, authUrl, err := p.RequestIdentityParams(nonce)                                                   
+cookieValue, cookiePath, authUrl, err := google.RequestIdentityParams(nonce)
 // handle error
 ```
 
-that handler provides you with a cookie to set, a path for that cookie and the
-url where to redirect for your 302.
+That handler provides you with a cookie to set, a path for the cookie (the callback url) and the prepopulated provider url 
+where to redirect (302).
 
 
 ## Open ID Connect Callback URL Handler
+
+After the user authenticated to the identity provider (google for example), it
+will be redirected back to you, through your callback url with parameters to authenticate the
+login request that originated from your login page, with the state, code and the
+cookie that the browser wil reuse to access the callback url.
 
 ```go
 ...
@@ -118,9 +144,13 @@ se, err := oidc.Unpack(cookie)
 // get the provider to match in your context
 provider := se.GetProvider()
 // retrieve the provider context registered earlier and provide it the
-params you received in your call back
+// params you received in your call back
 idtoken, accesstoken, err = p.ValidateIdentityParams(ctx, code, cookie, state)
 ```
 
 and there you are authenticated to your IdP the token request is handled by the
-library along side verifying the reply for the openid connect attempt.
+library along side verifying the reply for the openid connect attempt and the
+cryptographic verification.
+
+your app can now create a valid session for the user that just logged in and
+create a context within your app.
