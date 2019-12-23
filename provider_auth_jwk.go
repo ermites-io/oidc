@@ -43,10 +43,12 @@ func (jm jwkmap) Verify(idt *token.Id) error {
 	return jwk.Verify(input, idt.Sig.Blob)
 }
 
+/*
 func NewJwkMap() (m jwkmap) {
 	m = make(jwkmap)
 	return
 }
+*/
 
 // RSA JWK format
 //
@@ -214,7 +216,8 @@ func (jwk *jwk) Verify(input, sig []byte) error {
 //func jwkMap(jwksUris ...string) map[string]*jwk {
 func jwkMapFromUrl(jwksUris ...string) (jwkmap, error) {
 	//jm := make(map[string]*jwk)
-	jm := NewJwkMap()
+	//jm := NewJwkMap()
+	jm := make(jwkmap)
 
 	// we shall set InsecureSkipVerify
 	tr := &http.Transport{
