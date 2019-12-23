@@ -79,23 +79,23 @@ func (pa *ProviderAuth) StateWithData(provider, nonce string, userData []byte) (
 	}
 
 	sd := newStateData(nonce, userData)
-	data, err := sd.Pack()
+	data, err := sd.pack()
 	if err != nil {
 		return nilstr, nilstr, ErrInvalid
 	}
 
-	e, err := NewStateEnvelope(provider)
+	e, err := newStateEnvelope(provider)
 	if err != nil {
 		return nilstr, nilstr, ErrInvalid
 	}
 
-	err = e.Seal(pa.p, data)
+	err = e.seal(pa.p, data)
 	if err != nil {
 		return nilstr, nilstr, ErrInvalid
 	}
 
 	// envelope.Pack()
-	cookie, err := Pack(e)
+	cookie, err := pack(e)
 	if err != nil {
 		return nilstr, nilstr, ErrInvalid
 	}
@@ -127,12 +127,12 @@ func (pa *ProviderAuth) ValidateStateWithData(cookie, state string, t time.Durat
 		return nilstr, nil, err
 	}
 
-	data, err := se.Open(pa.p)
+	data, err := se.open(pa.p)
 	if err != nil {
 		return nilstr, nil, err
 	}
 
-	sd, err := UnpackStateData(data)
+	sd, err := unpackStateData(data)
 	if err != nil {
 		return nilstr, nil, err
 	}

@@ -51,12 +51,12 @@ func newStateData(nonce string, userdata []byte) *StateData {
 }
 
 // marshall
-func (sd *StateData) Pack() ([]byte, error) {
+func (sd *StateData) pack() ([]byte, error) {
 	return proto.Marshal(sd)
 }
 
 // unmarshal
-func UnpackStateData(blob []byte) (*StateData, error) {
+func unpackStateData(blob []byte) (*StateData, error) {
 	var sd StateData
 	err := proto.Unmarshal(blob, &sd)
 	return &sd, err
@@ -81,7 +81,7 @@ func UnpackStateData(blob []byte) (*StateData, error) {
 //
 //
 // an empty envelope
-func NewStateEnvelope(provider string) (*StateEnvelope, error) {
+func newStateEnvelope(provider string) (*StateEnvelope, error) {
 	salt := make([]byte, 16)
 	if _, err := rand.Read(salt); err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func NewStateEnvelope(provider string) (*StateEnvelope, error) {
 	}, nil
 }
 
-func (se *StateEnvelope) Seal(key, payload []byte) error {
+func (se *StateEnvelope) seal(key, payload []byte) error {
 	//var nilstr string
 	var ad []byte
 
@@ -130,7 +130,7 @@ func (se *StateEnvelope) Seal(key, payload []byte) error {
 	return nil
 }
 
-func (se *StateEnvelope) Open(key []byte) ([]byte, error) {
+func (se *StateEnvelope) open(key []byte) ([]byte, error) {
 	var ad []byte
 
 	salt := se.Salt
@@ -157,7 +157,7 @@ func (se *StateEnvelope) Open(key []byte) ([]byte, error) {
 	return aead.Open(nil, nonce, se.Payload, ad)
 }
 
-func Pack(se *StateEnvelope) (string, error) {
+func pack(se *StateEnvelope) (string, error) {
 	//func (se *StateEnvelope) Pack() (string, error) {
 	var nilstr string
 

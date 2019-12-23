@@ -35,6 +35,7 @@ type Provider struct {
 }
 
 var (
+	DefaultStateTimeout = 5 * time.Minute
 	// default openid scopes, this plus more.
 	openidScopes = []string{
 		"openid", "email", "profile",
@@ -235,6 +236,10 @@ func (p *Provider) RequestIdentityParams(nonce string) (cookieValue, cookiePath,
 }
 
 func (p *Provider) ValidateIdToken(nonce string, idt *token.Id) error {
+
+	// TODO: call idt.Validate(issuer, clientid, nonce)
+	//
+
 	// signed Idp nonce vs state embedded nonce
 	if nonce != idt.Claims.Nonce {
 		return fmt.Errorf("invalid state nonce: %s vs idt.Nonce: %s", nonce, idt.Claims.Nonce)
