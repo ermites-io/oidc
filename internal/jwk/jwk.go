@@ -1,6 +1,6 @@
 // +build go1.12
 
-package oidc
+package jwk
 
 import (
 	"bytes"
@@ -19,14 +19,14 @@ import (
 	"github.com/ermites-io/oidc/token"
 )
 
-type jwk struct {
-	key  interface{}
+type key struct {
+	pub  interface{}
 	hash crypto.Hash
 }
 
-type jwkmap map[string]*jwk
+type Keys map[string]*key
 
-func (jm jwkmap) Verify(idt *token.Id) error {
+func (jm Keys) Verify(idt *token.Id) error {
 	var input []byte
 
 	jwk, ok := jm[idt.Hdr.Kid]
@@ -68,7 +68,7 @@ func NewJwkMap() (m jwkmap) {
 // alg == RSA + SHA bla
 //func jwkParseRSAPub(jwk map[string]interface{}) (*rsa.PublicKey, crypto.Hash, error) {
 //func jwkParseRSAPub(rawjwk map[string]interface{}) (*jwk, error) {
-func parseJwkRSAPub(rawjwk map[string]interface{}) (*jwk, error) {
+func parseJwkRSAPub(rawjwk map[string]interface{}) (*key, error) {
 	e64 := rawjwk["e"].(string) // "AQAB"
 	n64 := rawjwk["n"].(string) // "uNTSxjyvT0YtCoxUyEPahIq43tiK5lksGe5ZoE88AOJqXOLag5-wH1Ex5rsoQ628HhqtsEHmCQ2wT0-bl_Ol3EIAHLuCM0rmRiWevAEmDllpSldL2I3-lv_b-97BiRcW5KAAfF-0B_3zfNEGKF70l_iMDZ3j56IpDJwLDYma5C6Kh7r-fmoToKQTeasryoJWrDYlxqb_BC_egim_p5jLnc6cqY20ByVKdpnw7zok1-iLkl8nmEZMsznl-8KqVdZfk1NwPKKzMpTXvHvqC_9pgGFcwgvVpNZ6thk-L0UZs669hluHiq_eduSUHuwSgSpAtlloShPhJqj5tmRZ0P365Q"
 	//kty := rawjwk["kty"].(string) // "RSA"
@@ -101,13 +101,13 @@ func parseJwkRSAPub(rawjwk map[string]interface{}) (*jwk, error) {
 	switch {
 	//case kty == "RSA" && alg == "RS256":
 	case len(nbuf) == 256:
-		return &jwk{key: &r, hash: crypto.SHA256}, nil
+		return &key{pub: &r, hash: crypto.SHA256}, nil
 	//case kty == "RSA" && alg == "RS384":
 	case len(nbuf) == 384:
-		return &jwk{key: &r, hash: crypto.SHA384}, nil
+		return &key{pub: &r, hash: crypto.SHA384}, nil
 	//case kty == "RSA" && alg == "RS512":
 	case len(nbuf) == 512:
-		return &jwk{key: &r, hash: crypto.SHA384}, nil
+		return &key{pub: &r, hash: crypto.SHA384}, nil
 	}
 
 	//fmt.Printf("RSA Public Size: %d\n", r.Size())
@@ -118,7 +118,7 @@ func parseJwkRSAPub(rawjwk map[string]interface{}) (*jwk, error) {
 // XXX security risk, limit the size..
 // func jwkParseECPub(jwk map[string]interface{}) (*ecdsa.PublicKey, crypto.Hash, error) {
 //func jwkParseECPub(rawjwk map[string]interface{}) (*jwk, error) {
-func parseJwkECPub(rawjwk map[string]interface{}) (*jwk, error) {
+func parseJwkECPub(rawjwk map[string]interface{}) (*key, error) {
 	x64 := rawjwk["x"].(string)   // "MKBCTNIcKUSDii11ySs3526iDZ8AiTo7Tu6KPAqv7D4"
 	y64 := rawjwk["y"].(string)   // "4Etl6SRW2YiLUrN5vfvVHuhp7x8PxltmWWlbbM4IFyM"
 	crv := rawjwk["crv"].(string) // "P-256"
@@ -149,13 +149,13 @@ func parseJwkECPub(rawjwk map[string]interface{}) (*jwk, error) {
 	switch {
 	case crv == "P-256":
 		e.Curve = elliptic.P256()
-		return &jwk{key: &e, hash: crypto.SHA256}, nil
+		return &key{pub: &e, hash: crypto.SHA256}, nil
 	case crv == "P-384":
 		e.Curve = elliptic.P384()
-		return &jwk{key: &e, hash: crypto.SHA384}, nil
+		return &key{pub: &e, hash: crypto.SHA384}, nil
 	case crv == "P-521":
 		e.Curve = elliptic.P521()
-		return &jwk{key: &e, hash: crypto.SHA512}, nil
+		return &key{pub: &e, hash: crypto.SHA512}, nil
 	}
 
 	return nil, ErrUnsupported
@@ -163,8 +163,8 @@ func parseJwkECPub(rawjwk map[string]interface{}) (*jwk, error) {
 
 // RFC7518 section 3.4
 //func (jwk *jwk) Verify(key interface{}, hp crypto.Hash, input, sig []byte) error {
-func (jwk *jwk) Verify(input, sig []byte) error {
-	key := jwk.key
+func (jwk *key) Verify(input, sig []byte) error {
+	key := jwk.pub
 	hp := jwk.hash
 
 	// for RSA we use THIS function..
@@ -214,10 +214,10 @@ func (jwk *jwk) Verify(input, sig []byte) error {
 
 // good start.. not perfect
 //func jwkMap(jwksUris ...string) map[string]*jwk {
-func jwkMapFromUrl(jwksUris ...string) (jwkmap, error) {
+func MapFromUrl(jwksUris ...string) (Keys, error) {
 	//jm := make(map[string]*jwk)
 	//jm := NewJwkMap()
-	jm := make(jwkmap)
+	jm := make(Keys)
 
 	// we shall set InsecureSkipVerify
 	tr := &http.Transport{

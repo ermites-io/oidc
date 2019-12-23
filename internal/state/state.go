@@ -42,7 +42,6 @@ const (
 //
 //
 func NewData(nonce string, userdata []byte) *Data {
-
 	return &Data{
 		Nonce:     nonce,
 		Timestamp: time.Now().Unix(),

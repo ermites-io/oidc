@@ -7,26 +7,32 @@ import (
 	"encoding/hex"
 	"time"
 
+	"github.com/ermites-io/oidc/internal/jwk"
 	"github.com/ermites-io/oidc/internal/state"
 	"github.com/ermites-io/oidc/token"
 	"golang.org/x/crypto/sha3"
 )
 
 type ProviderAuth struct {
-	p   []byte // password
-	s   []byte // secret
-	jwk jwkmap // jwt verifier XXX types needs to change name
+	p   []byte   // password
+	s   []byte   // secret
+	jwk jwk.Keys // jwt verifier XXX types needs to change name
 }
 
-func NewProviderAuth(password, secret []byte, jwks jwkmap) *ProviderAuth {
+func NewProviderAuth(password, secret []byte, jwkUrl string) (*ProviderAuth, error) {
 	pTmp := sha3.Sum512([]byte(password))
 	sTmp := sha3.Sum512([]byte(secret))
+
+	jwkauth, err := jwk.MapFromUrl(jwkUrl)
+	if err != nil {
+		return nil, err
+	}
 
 	return &ProviderAuth{
 		p:   pTmp[:], // this is to encrypt the state
 		s:   sTmp[:], // this is for the hmac part that goes in the URL
-		jwk: jwks,
-	}
+		jwk: jwkauth,
+	}, nil
 }
 
 func hmac256(key, data []byte) ([]byte, error) {

@@ -132,10 +132,12 @@ func (p *Provider) SetAuth(clientId, clientSecret, clientUrlRedirect string) err
 
 	// get the jwks map
 	// XXX might move into provider_auth
-	jwtauth, err := jwkMapFromUrl(p.urlJwks)
-	if err != nil {
-		return err
-	}
+	/*
+		jwtauth, err := jwkMapFromUrl(p.urlJwks)
+		if err != nil {
+			return err
+		}
+	*/
 
 	// state auth is build from the client secret & client id.
 	// derive 2 keys from clientSecret
@@ -180,7 +182,11 @@ func (p *Provider) SetAuth(clientId, clientSecret, clientUrlRedirect string) err
 	}
 
 	// auth contains the jwk stuff
-	p.auth = NewProviderAuth(oidcpass, oidcsecret, jwtauth)
+	//p.auth = NewProviderAuth(oidcpass, oidcsecret, jwtauth)
+	p.auth, err = NewProviderAuth(oidcpass, oidcsecret, p.urlJwks)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

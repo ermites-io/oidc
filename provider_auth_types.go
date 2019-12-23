@@ -3,8 +3,8 @@
 package oidc
 
 import (
-	"encoding/json"
 	//"fmt"
+	"encoding/json"
 	"io/ioutil"
 )
 
