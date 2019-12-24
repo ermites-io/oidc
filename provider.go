@@ -311,7 +311,8 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 	// crypto verify the token.
 	//err = p.auth.VerifyIdToken(idt)
 	// create functions..
-	err = p.auth.VerifyIdToken(idt.Kid(), idt.SigInput(), idt.SigBlob())
+	kid, blob, sig := idt.GetVerifyInfo()
+	err = p.auth.VerifyIdToken(kid, blob, sig)
 	if err != nil {
 		//panic(err)
 		return nil, nilstr, err
