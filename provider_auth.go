@@ -85,8 +85,8 @@ func (pa *ProviderAuth) StateWithData(provider, nonce string, userData []byte) (
 		return nilstr, nilstr, ErrInvalid
 	}
 
-	sd := state.NewData(nonce, userData)
-	data, err := sd.Pack()
+	d := state.NewData(nonce, userData)
+	data, err := d.Pack()
 	if err != nil {
 		return nilstr, nilstr, ErrInvalid
 	}
@@ -102,7 +102,7 @@ func (pa *ProviderAuth) StateWithData(provider, nonce string, userData []byte) (
 	}
 
 	// envelope.Pack()
-	cookie, err := state.Pack(e)
+	cookie, err := e.Pack()
 	if err != nil {
 		return nilstr, nilstr, ErrInvalid
 	}
@@ -129,28 +129,28 @@ func (pa *ProviderAuth) ValidateStateWithData(cookie, stateparam string, t time.
 		return nilstr, nil, ErrInvalidState
 	}
 
-	se, err := state.Unpack(cookie)
+	e, err := state.ParseEnvelope(cookie)
 	if err != nil {
 		return nilstr, nil, err
 	}
 
-	data, err := se.Open(pa.p)
+	data, err := e.Open(pa.p)
 	if err != nil {
 		return nilstr, nil, err
 	}
 
-	sd, err := state.UnpackData(data)
+	d, err := state.ParseData(data)
 	if err != nil {
 		return nilstr, nil, err
 	}
 
 	// is the state expired?
-	stateCreationTime := time.Unix(sd.Timestamp, 0)
+	stateCreationTime := time.Unix(d.Timestamp, 0)
 	if time.Since(stateCreationTime) > t {
 		return nilstr, nil, ErrInvalidState
 	}
 
-	return sd.Nonce, sd.Userdata, nil
+	return d.Nonce, d.Userdata, nil
 }
 
 func (pa *ProviderAuth) VerifyIdToken(idt *token.Id) error {

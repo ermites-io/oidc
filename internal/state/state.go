@@ -50,12 +50,13 @@ func NewData(nonce string, userdata []byte) *Data {
 }
 
 // marshall
-func (sd *Data) Pack() ([]byte, error) {
-	return proto.Marshal(sd)
+func (m *Data) Pack() ([]byte, error) {
+	return proto.Marshal(m)
 }
 
 // unmarshal
-func UnpackData(blob []byte) (*Data, error) {
+//func UnpackData(blob []byte) (*Data, error) {
+func ParseData(blob []byte) (*Data, error) {
 	var sd Data
 	err := proto.Unmarshal(blob, &sd)
 	return &sd, err
@@ -99,12 +100,12 @@ func NewEnvelope(provider string) (*Envelope, error) {
 	}, nil
 }
 
-func (se *Envelope) Seal(key, payload []byte) error {
+func (m *Envelope) Seal(key, payload []byte) error {
 	//var nilstr string
 	var ad []byte
 
-	salt := se.Salt
-	nonce := se.Nonce
+	salt := m.Salt
+	nonce := m.Nonce
 
 	// XXX hkdf should be enough.
 	derivedKey := pbkdf2.Key(key, salt, 8192, 32, sha3.New256)
@@ -114,9 +115,9 @@ func (se *Envelope) Seal(key, payload []byte) error {
 	}
 
 	// protect salt and nonce
-	shasalt := sha3.Sum256(se.Salt)
-	shanonce := sha3.Sum256(se.Nonce)
-	shaprovider := sha3.Sum256([]byte(se.Provider))
+	shasalt := sha3.Sum256(m.Salt)
+	shanonce := sha3.Sum256(m.Nonce)
+	shaprovider := sha3.Sum256([]byte(m.Provider))
 	// XXX TOFIX and add in additional data
 	//shaprovider, shaproviderstr := sha256b64(se.Provider)
 
@@ -125,15 +126,15 @@ func (se *Envelope) Seal(key, payload []byte) error {
 	ad = append(ad, shaprovider[:]...)
 
 	// now this is our raw state.
-	se.Payload = aead.Seal(nil, nonce, payload, ad)
+	m.Payload = aead.Seal(nil, nonce, payload, ad)
 	return nil
 }
 
-func (se *Envelope) Open(key []byte) ([]byte, error) {
+func (m *Envelope) Open(key []byte) ([]byte, error) {
 	var ad []byte
 
-	salt := se.Salt
-	nonce := se.Nonce
+	salt := m.Salt
+	nonce := m.Nonce
 
 	// XXX hkdf should be enough.
 	derivedKey := pbkdf2.Key(key, salt, 8192, 32, sha3.New256)
@@ -143,9 +144,9 @@ func (se *Envelope) Open(key []byte) ([]byte, error) {
 	}
 
 	// protect salt and nonce
-	shasalt := sha3.Sum256(se.Salt)
-	shanonce := sha3.Sum256(se.Nonce)
-	shaprovider := sha3.Sum256([]byte(se.Provider))
+	shasalt := sha3.Sum256(m.Salt)
+	shanonce := sha3.Sum256(m.Nonce)
+	shaprovider := sha3.Sum256([]byte(m.Provider))
 	// XXX TOFIX and add in additional data
 	//shaprovider, shaproviderstr := sha256b64(se.Provider)
 
@@ -153,14 +154,14 @@ func (se *Envelope) Open(key []byte) ([]byte, error) {
 	ad = append(ad, shanonce[:]...)
 	ad = append(ad, shaprovider[:]...)
 
-	return aead.Open(nil, nonce, se.Payload, ad)
+	return aead.Open(nil, nonce, m.Payload, ad)
 }
 
-func Pack(se *Envelope) (string, error) {
+func (m *Envelope) Pack() (string, error) {
 	//func (se *StateEnvelope) Pack() (string, error) {
 	var nilstr string
 
-	s, err := proto.Marshal(se)
+	s, err := proto.Marshal(m)
 	if err != nil {
 		return nilstr, err
 	}
@@ -170,18 +171,19 @@ func Pack(se *Envelope) (string, error) {
 	return s64, nil
 }
 
-func Unpack(envelope string) (*Envelope, error) {
-	var se Envelope
+//func UnpackEnvelope(envelope string) (*Envelope, error) {
+func ParseEnvelope(packed string) (*Envelope, error) {
+	var e Envelope
 
-	spb, err := base64.RawURLEncoding.DecodeString(envelope)
+	spb, err := base64.RawURLEncoding.DecodeString(packed)
 	if err != nil {
 		return nil, err
 	}
 
-	err = proto.Unmarshal(spb, &se)
+	err = proto.Unmarshal(spb, &e)
 	if err != nil {
 		return nil, err
 	}
 
-	return &se, nil
+	return &e, nil
 }
