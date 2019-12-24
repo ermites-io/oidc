@@ -13,13 +13,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ermites-io/oidc/token"
 	"golang.org/x/crypto/hkdf"
 	"golang.org/x/crypto/sha3"
 
 	// just to get the cookie..
 	"github.com/ermites-io/oidc/internal/auth"
 	"github.com/ermites-io/oidc/internal/state"
+	"github.com/ermites-io/oidc/token"
 )
 
 type Provider struct {
