@@ -21,7 +21,7 @@ type Verifier struct {
 }
 
 //func NewProviderAuth(password, secret []byte, jwkUrl string) (*ProviderAuth, error) {
-func NewProviderAuth(password, secret []byte, jwkUrl string) (*Verifier, error) {
+func NewVerifier(password, secret []byte, jwkUrl string) (*Verifier, error) {
 	pTmp := sha3.Sum512([]byte(password))
 	sTmp := sha3.Sum512([]byte(secret))
 

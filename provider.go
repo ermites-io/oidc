@@ -186,7 +186,7 @@ func (p *Provider) SetAuth(clientId, clientSecret, clientUrlRedirect string) err
 
 	// auth contains the jwk stuff
 	//p.auth = NewProviderAuth(oidcpass, oidcsecret, jwtauth)
-	p.auth, err = NewProviderAuth(oidcpass, oidcsecret, p.urlJwks)
+	p.auth, err = auth.NewVerifier(oidcpass, oidcsecret, p.urlJwks)
 	if err != nil {
 		return err
 	}
