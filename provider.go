@@ -13,6 +13,10 @@ import (
 	"strings"
 	"time"
 
+	// just to get the cookie..
+	"github.com/ermites-io/oidc/internal/auth"
+	"github.com/ermites-io/oidc/internal/state"
+
 	"github.com/ermites-io/oidc/token"
 	"golang.org/x/crypto/hkdf"
 	"golang.org/x/crypto/sha3"
@@ -31,7 +35,8 @@ type Provider struct {
 	scopes                []string // we might need more..scopes
 	// auth parts
 	//jwk  jwkmap        // jwt verifier XXX types needs to change name
-	auth *ProviderAuth // state provider
+	//auth *ProviderAuth // state provider
+	auth *auth.Verifier // state provider
 }
 
 var (
@@ -49,7 +54,7 @@ func sha256hex(str string) string {
 
 func NewProvider(name, urlOidcConf string) (*Provider, error) {
 	// parse the Oidc Configuration
-	auth, token, issuer, jwks, err := parseOpenIdConfiguration(urlOidcConf)
+	authz, token, issuer, jwks, err := parseOpenIdConfiguration(urlOidcConf)
 	if err != nil {
 		return nil, err
 	}
@@ -57,13 +62,11 @@ func NewProvider(name, urlOidcConf string) (*Provider, error) {
 	oidc := Provider{
 		//urlRedirect: urlRedirect,
 		name:     name,
-		urlAuth:  auth,
+		urlAuth:  authz,
 		urlToken: token,
 		urlJwks:  jwks,
 		issuer:   issuer,
 		scopes:   openidScopes,
-		// the authorities check the jwt
-		//jwt: jwtauth,
 	}
 
 	//fmt.Printf("PROVIDER: %v\n", oidc)
@@ -306,7 +309,9 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 
 	//fmt.Printf("NOW VERIFYING TOKEN SIGNATURE\n")
 	// crypto verify the token.
-	err = p.auth.VerifyIdToken(idt)
+	//err = p.auth.VerifyIdToken(idt)
+	// create functions..
+	err = p.auth.VerifyIdToken(idt.Kid(), idt.SigInput(), idt.SigBlob())
 	if err != nil {
 		//panic(err)
 		return nil, nilstr, err
@@ -322,4 +327,16 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 	// show the token.
 	//fmt.Printf("SIG: %v TOKEN: %v\n", err, idt)
 	return idt, nilstr, nil
+}
+
+// return provider from the cookie.
+func GetProvider(cookie string) (string, error) {
+	var nilstr string
+
+	e, err := state.ParseEnvelope(cookie)
+	if err != nil {
+		return nilstr, err
+	}
+
+	return e.GetProvider(), nil
 }

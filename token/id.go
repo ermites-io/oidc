@@ -90,6 +90,24 @@ func (idt *Id) String() string {
 		idt.Sig)
 }
 
+func (idt *Id) Kid() string {
+	return idt.Hdr.Kid
+}
+
+func (idt *Id) SigInput() []byte {
+	var input []byte
+
+	input = append(input, idt.Hdr.Raw...)
+	input = append(input, []byte(".")...)
+	input = append(input, idt.Sig.Blob...)
+
+	return input
+}
+
+func (idt *Id) SigBlob() []byte {
+	return idt.Sig.Blob
+}
+
 // FieldFunc() or Split()
 // XXX TODO should be renamed to parseSafeIdToken
 func Parse(token string) (*Id, error) {

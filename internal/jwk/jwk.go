@@ -15,8 +15,7 @@ import (
 	"io"
 	"math/big"
 	"net/http"
-
-	"github.com/ermites-io/oidc/token"
+	//"github.com/ermites-io/oidc/token"
 )
 
 type key struct {
@@ -26,21 +25,28 @@ type key struct {
 
 type Keys map[string]*key
 
-func (jm Keys) Verify(idt *token.Id) error {
-	var input []byte
+//func (jm Keys) Verify(idt *token.Id) error {
+func (jm Keys) Verify(kid string, input, sig []byte) error {
+	/*
+		var input []byte
 
-	jwk, ok := jm[idt.Hdr.Kid]
-	if !ok {
-		return fmt.Errorf("no jwk for kid: %s", idt.Hdr.Kid)
-	}
+		jwk, ok := jm[idt.Hdr.Kid]
+		if !ok {
+			return fmt.Errorf("no jwk for kid: %s", idt.Hdr.Kid)
+		}
 
-	input = append(input, idt.Hdr.Raw...)
-	input = append(input, []byte(".")...)
-	input = append(input, idt.Claims.Raw...)
+		input = append(input, idt.Hdr.Raw...)
+		input = append(input, []byte(".")...)
+		input = append(input, idt.Claims.Raw...)
+	*/
 
 	//fmt.Printf("VERIFYING INPUT: %s\n", input)
+	jwk, ok := jm[kid]
+	if !ok {
+		return fmt.Errorf("no jwk for kid: %s", kid)
+	}
 
-	return jwk.Verify(input, idt.Sig.Blob)
+	return jwk.Verify(input, sig)
 }
 
 /*

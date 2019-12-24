@@ -66,7 +66,7 @@ type providerConfiguration struct {
 }
 
 // TODO:
-func parseOpenIdConfiguration(url string) (auth, token, issuer, jwks string, err error) {
+func parseOpenIdConfiguration(url string) (authz, token, issuer, jwks string, err error) {
 	var ok bool
 
 	oc := make(map[string]interface{})
@@ -82,7 +82,7 @@ func parseOpenIdConfiguration(url string) (auth, token, issuer, jwks string, err
 	}
 
 	// what i need to know from the
-	auth, ok = oc["authorization_endpoint"].(string)
+	authz, ok = oc["authorization_endpoint"].(string)
 	if !ok {
 		err = ErrParse
 		return
