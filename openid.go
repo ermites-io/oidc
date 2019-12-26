@@ -3,54 +3,11 @@
 package oidc
 
 import (
-	//"fmt"
 	"encoding/json"
 	"io/ioutil"
 )
 
-type tokenResponse struct {
-	AccessToken  string `json:"access_token"`
-	TokenType    string `json:"token_type"`
-	RefreshToken string `json:"refresh_token"`
-	ExpireIn     int    `json:"expires_in"`
-	IdToken      string `json:"id_token"`
-	Scope        string `json:"scope"` // not enforced in openid
-}
-
-type tokenError struct {
-	Error string `json:"error"`
-}
-
-func (t *tokenResponse) Valid() bool {
-	switch {
-	/*`
-	case len(t.AccessToken) == 0:
-		fallthrough
-	*/
-	case len(t.IdToken) == 0:
-		fallthrough
-		/*
-			case len(t.ExpireIn) == 0:
-				fallthrough
-		*/
-	case len(t.TokenType) == 0:
-		return false
-	}
-
-	return true
-}
-
-// TODO: clean up
-func parseTokenResponse(buffer []byte) (*tokenResponse, error) {
-	var t tokenResponse
-
-	//fmt.Printf("Read token:\n%s\n", buffer)
-
-	err := json.Unmarshal(buffer, &t)
-	return &t, err
-}
-
-type providerConfiguration struct {
+type OpenIDConfiguration struct {
 	// REQUIRED
 	Issuer                           string   `json:"issuer"`                                // REQUIRED
 	AuthorizationEndpoint            string   `json:"authorization_endpoint"`                // REQUIRED
@@ -66,7 +23,7 @@ type providerConfiguration struct {
 }
 
 // TODO:
-func parseOpenIdConfiguration(url string) (authz, token, issuer, jwks string, err error) {
+func parseOpenIDConfiguration(url string) (authz, token, issuer, jwks string, err error) {
 	var ok bool
 
 	oc := make(map[string]interface{})

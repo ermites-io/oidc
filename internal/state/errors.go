@@ -1,6 +1,6 @@
 // +build go1.12
 
-package auth
+package state
 
 type Error string
 

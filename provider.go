@@ -3,7 +3,6 @@
 package oidc
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -13,13 +12,20 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/crypto/hkdf"
 	"golang.org/x/crypto/sha3"
 
 	// just to get the cookie..
-	"github.com/ermites-io/oidc/internal/auth"
+	"github.com/ermites-io/oidc/internal/jwk"
 	"github.com/ermites-io/oidc/internal/state"
-	"github.com/ermites-io/oidc/token"
+	"github.com/ermites-io/oidc/internal/token"
+)
+
+var (
+	DefaultStateTimeout = 5 * time.Minute
+	// default openid scopes, this plus more.
+	openidScopes = []string{
+		"openid", "email", "profile",
+	}
 )
 
 type Provider struct {
@@ -36,16 +42,10 @@ type Provider struct {
 	// auth parts
 	//jwk  jwkmap        // jwt verifier XXX types needs to change name
 	//auth *ProviderAuth // state provider
-	auth *auth.Verifier // state provider
+	//auth *auth.Verifier // state provider
+	state *state.Verifier // state provider
+	jwk   jwk.Keys        // jwt verifier XXX types needs to change name
 }
-
-var (
-	DefaultStateTimeout = 5 * time.Minute
-	// default openid scopes, this plus more.
-	openidScopes = []string{
-		"openid", "email", "profile",
-	}
-)
 
 func sha256hex(str string) string {
 	tmpHash := sha3.Sum256([]byte(str))
@@ -54,7 +54,7 @@ func sha256hex(str string) string {
 
 func NewProvider(name, urlOidcConf string) (*Provider, error) {
 	// parse the Oidc Configuration
-	authz, token, issuer, jwks, err := parseOpenIdConfiguration(urlOidcConf)
+	authz, token, issuer, jwks, err := parseOpenIDConfiguration(urlOidcConf)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,11 @@ func (p *Provider) GetName() string {
 	return p.name
 }
 
-func (p *Provider) buildFormToken(grantType, code string) url.Values {
+func (p *Provider) buildFormToken(code string) url.Values {
+	// grantType for authorization_code flows
+	// code MUST be part of the grand types
+	grantType := "authorization_code"
+
 	v := url.Values{}
 	v.Set("grant_type", grantType)
 	v.Set("code", code)
@@ -87,9 +91,10 @@ func (p *Provider) buildFormToken(grantType, code string) url.Values {
 	return v
 }
 
-func (p *Provider) tokenRequest(ctx context.Context, grantType, code string) (*tokenResponse, error) {
+func (p *Provider) tokenRequest(ctx context.Context, code string) (*token.Response, error) {
+
 	// yes so..
-	v := p.buildFormToken(grantType, code)
+	v := p.buildFormToken(code)
 
 	// ENSURE TLS verification.
 	r, err := http.PostForm(p.urlToken, v)
@@ -110,7 +115,7 @@ func (p *Provider) tokenRequest(ctx context.Context, grantType, code string) (*t
 
 	//fmt.Printf("Token Body:\n%s\n", tokenBody)
 
-	t, err := parseTokenResponse(tokenBody)
+	t, err := token.ParseResponse(tokenBody)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +124,7 @@ func (p *Provider) tokenRequest(ctx context.Context, grantType, code string) (*t
 }
 
 func (p *Provider) SetAuth(clientId, clientSecret, clientUrlRedirect string) error {
-	var buf bytes.Buffer
+	//var buf bytes.Buffer
 
 	// ok setup the basics
 	p.clientId = clientId
@@ -133,60 +138,59 @@ func (p *Provider) SetAuth(clientId, clientSecret, clientUrlRedirect string) err
 	}
 	p.clientUrlRedirectPath = u.RequestURI()
 
-	// get the jwks map
-	// XXX might move into provider_auth
 	/*
-		jwtauth, err := jwkMapFromUrl(p.urlJwks)
+		// state auth is build from the client secret & client id.
+		// derive 2 keys from clientSecret
+		// pass is blake2 ( hkdf( sha3(clientSecret + clientId)) )
+		// secret is blake2 ( hkdf( sha3(clientSecret + clientId + UrlRedirect)) )
+		sha3ClientSecret := sha3.Sum512([]byte(clientSecret))
+		sha3ClientId := sha3.Sum512([]byte(clientId))
+
+		_, err = buf.Write(sha3ClientSecret[:])
+		if err != nil {
+			return err
+		}
+
+		_, err = buf.Write(sha3ClientId[:])
+		if err != nil {
+			return err
+		}
+
+		sha3KdfSalt := sha3.Sum512(buf.Bytes())
+
+		// XXX ok this needs to move in the ProviderAuth part to avoid someone
+		// using the auth without derivation.. users hey!
+		// if for some reason there is a crypto biais or side channel, at least
+		// the secret is derived and it does not leak the clientSecret directly
+
+		// XXX key material handling is shit here :)
+		hkdfReader := hkdf.New(sha3.New512, sha3ClientSecret[:], sha3KdfSalt[:], []byte(clientId))
+
+		oidcpass := make([]byte, 64)
+		oidcsecret := make([]byte, 64)
+
+		// first 64 bytes of that reader -> pass (state encryption key)
+		_, err = hkdfReader.Read(oidcpass)
+		if err != nil {
+			return err
+		}
+
+		// second 64 bytes of that reader -> secret (hmac state key)
+		_, err = hkdfReader.Read(oidcsecret)
 		if err != nil {
 			return err
 		}
 	*/
 
-	// state auth is build from the client secret & client id.
-	// derive 2 keys from clientSecret
-	// pass is blake2 ( hkdf( sha3(clientSecret + clientId)) )
-	// secret is blake2 ( hkdf( sha3(clientSecret + clientId + UrlRedirect)) )
-	sha3ClientSecret := sha3.Sum512([]byte(clientSecret))
-	sha3ClientId := sha3.Sum512([]byte(clientId))
-
-	_, err = buf.Write(sha3ClientSecret[:])
-	if err != nil {
-		return err
-	}
-
-	_, err = buf.Write(sha3ClientId[:])
-	if err != nil {
-		return err
-	}
-
-	sha3KdfSalt := sha3.Sum512(buf.Bytes())
-
-	// XXX ok this needs to move in the ProviderAuth part to avoid someone
-	// using the auth without derivation.. users hey!
-	// if for some reason there is a crypto biais or side channel, at least
-	// the secret is derived and it does not leak the clientSecret directly
-
-	// XXX key material handling is shit here :)
-	hkdfReader := hkdf.New(sha3.New512, sha3ClientSecret[:], sha3KdfSalt[:], []byte(clientId))
-
-	oidcpass := make([]byte, 64)
-	oidcsecret := make([]byte, 64)
-
-	// first 64 bytes of that reader -> pass (state encryption key)
-	_, err = hkdfReader.Read(oidcpass)
-	if err != nil {
-		return err
-	}
-
-	// second 64 bytes of that reader -> secret (hmac state key)
-	_, err = hkdfReader.Read(oidcsecret)
-	if err != nil {
-		return err
-	}
-
 	// auth contains the jwk stuff
 	//p.auth = NewProviderAuth(oidcpass, oidcsecret, jwtauth)
-	p.auth, err = auth.NewVerifier(oidcpass, oidcsecret, p.urlJwks)
+	//p.auth, err = auth.NewVerifier(oidcpass, oidcsecret, p.urlJwks)
+	p.state, err = state.NewVerifier(clientId, clientSecret, p.urlJwks)
+	if err != nil {
+		return err
+	}
+
+	p.jwk, err = jwk.MapFromUrl(p.urlJwks)
 	if err != nil {
 		return err
 	}
@@ -225,7 +229,8 @@ func (p *Provider) RequestIdentityParams(nonce string) (cookieValue, cookiePath,
 
 	//cookieValue, cookiePath, Url, err := p.Authenticate(nonce)
 	//cookie, state, err := p.auth.State(providerhex, nonce)
-	cookie, state, err := p.auth.State(p.name, nonce)
+	//cookie, state, err := p.auth.State(p.name, nonce)
+	cookie, state, err := p.state.New(p.name, nonce)
 	if err != nil {
 		return
 	}
@@ -277,13 +282,8 @@ func (p *Provider) ValidateIdToken(nonce string, idt *token.Id) error {
 func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.Id, string, error) {
 	var nilstr string
 
-	// grantType for authorization_code flows
-	// code MUST be part of the grand types
-
-	grantType := "authorization_code"
-
 	// YES, we unpack again for fuck sake!
-	nonce, err := p.auth.ValidateState(cookie, state, 2*time.Minute)
+	nonce, err := p.state.Validate(cookie, state, 2*time.Minute)
 	if err != nil {
 		fmt.Printf("state '%s' is not valid: %v\n", state, err)
 		return nil, nilstr, err
@@ -294,7 +294,7 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 	// TODO: need to give back id token, access token, refresh token (if any)
 	// needs to see how i will wire the usercontrolled handler.
 	// return the accesstoken & refresh token too
-	t, err := p.tokenRequest(ctx, grantType, code)
+	t, err := p.tokenRequest(ctx, code)
 	if err != nil {
 		return nil, nilstr, err
 	}
@@ -307,12 +307,10 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 		return nil, nilstr, err
 	}
 
-	//fmt.Printf("NOW VERIFYING TOKEN SIGNATURE\n")
-	// crypto verify the token.
-	//err = p.auth.VerifyIdToken(idt)
 	// create functions..
 	kid, blob, sig := idt.GetVerifyInfo()
-	err = p.auth.VerifyIdToken(kid, blob, sig)
+	//err = p.state.VerifyIdToken(kid, blob, sig)
+	err = p.jwk.Verify(kid, blob, sig)
 	if err != nil {
 		//panic(err)
 		return nil, nilstr, err
@@ -326,7 +324,6 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 	}
 
 	// show the token.
-	//fmt.Printf("SIG: %v TOKEN: %v\n", err, idt)
 	return idt, nilstr, nil
 }
 
