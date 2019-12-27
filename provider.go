@@ -39,10 +39,8 @@ type Provider struct {
 	urlJwks               string   // where are the authorities for the JWTs
 	issuer                string   // who issued the certificates.
 	scopes                []string // we might need more..scopes
+
 	// auth parts
-	//jwk  jwkmap        // jwt verifier XXX types needs to change name
-	//auth *ProviderAuth // state provider
-	//auth *auth.Verifier // state provider
 	state *state.Verifier // state provider
 	jwk   jwk.Keys        // jwt verifier XXX types needs to change name
 }
@@ -138,50 +136,6 @@ func (p *Provider) SetAuth(clientId, clientSecret, clientUrlRedirect string) err
 	}
 	p.clientUrlRedirectPath = u.RequestURI()
 
-	/*
-		// state auth is build from the client secret & client id.
-		// derive 2 keys from clientSecret
-		// pass is blake2 ( hkdf( sha3(clientSecret + clientId)) )
-		// secret is blake2 ( hkdf( sha3(clientSecret + clientId + UrlRedirect)) )
-		sha3ClientSecret := sha3.Sum512([]byte(clientSecret))
-		sha3ClientId := sha3.Sum512([]byte(clientId))
-
-		_, err = buf.Write(sha3ClientSecret[:])
-		if err != nil {
-			return err
-		}
-
-		_, err = buf.Write(sha3ClientId[:])
-		if err != nil {
-			return err
-		}
-
-		sha3KdfSalt := sha3.Sum512(buf.Bytes())
-
-		// XXX ok this needs to move in the ProviderAuth part to avoid someone
-		// using the auth without derivation.. users hey!
-		// if for some reason there is a crypto biais or side channel, at least
-		// the secret is derived and it does not leak the clientSecret directly
-
-		// XXX key material handling is shit here :)
-		hkdfReader := hkdf.New(sha3.New512, sha3ClientSecret[:], sha3KdfSalt[:], []byte(clientId))
-
-		oidcpass := make([]byte, 64)
-		oidcsecret := make([]byte, 64)
-
-		// first 64 bytes of that reader -> pass (state encryption key)
-		_, err = hkdfReader.Read(oidcpass)
-		if err != nil {
-			return err
-		}
-
-		// second 64 bytes of that reader -> secret (hmac state key)
-		_, err = hkdfReader.Read(oidcsecret)
-		if err != nil {
-			return err
-		}
-	*/
-
 	// auth contains the jwk stuff
 	//p.auth = NewProviderAuth(oidcpass, oidcsecret, jwtauth)
 	//p.auth, err = auth.NewVerifier(oidcpass, oidcsecret, p.urlJwks)
@@ -224,19 +178,12 @@ func (p *Provider) buildUrlAuth(responseType, scope, nonce, state string) (strin
 
 // XXX TODO: probably need to be renamed properly
 func (p *Provider) RequestIdentityParams(nonce string) (cookieValue, cookiePath, IdpRedirectUrl string, err error) {
-
-	//providerhex := Sha256hex(p.name)
-
-	//cookieValue, cookiePath, Url, err := p.Authenticate(nonce)
-	//cookie, state, err := p.auth.State(providerhex, nonce)
-	//cookie, state, err := p.auth.State(p.name, nonce)
 	cookie, state, err := p.state.New(p.name, nonce)
 	if err != nil {
 		return
 	}
 
 	// this is harcoded for "now"
-	//responseType := "code"
 	responseType := "code"
 	scope := strings.Join(p.scopes, " ")
 
@@ -250,9 +197,7 @@ func (p *Provider) RequestIdentityParams(nonce string) (cookieValue, cookiePath,
 }
 
 func (p *Provider) ValidateIdToken(nonce string, idt *token.Id) error {
-
 	// TODO: call idt.Validate(issuer, clientid, nonce)
-	//
 
 	// signed Idp nonce vs state embedded nonce
 	if nonce != idt.Claims.Nonce {
@@ -275,7 +220,7 @@ func (p *Provider) ValidateIdToken(nonce string, idt *token.Id) error {
 }
 
 // XXX TODO: this is the real authentication
-//func (o *Provider) ValidateIdentityParams(code string, sv *OidcStateValue) (accessToken, idToken string, err error) {
+//func (p *Provider) ValidateIdentityParams(code string, sv *OidcStateValue) (accessToken, idToken string, err error) {
 //func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.Jwt, string, error) {
 //func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.Access, string, error) {
 //func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.EndpointResponse, string, error) {
@@ -283,7 +228,7 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 	var nilstr string
 
 	// YES, we unpack again for fuck sake!
-	nonce, err := p.state.Validate(cookie, state, 2*time.Minute)
+	nonce, err := p.state.Validate(cookie, state, DefaultStateTimeout)
 	if err != nil {
 		fmt.Printf("state '%s' is not valid: %v\n", state, err)
 		return nil, nilstr, err
@@ -309,7 +254,6 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 
 	// create functions..
 	kid, blob, sig := idt.GetVerifyInfo()
-	//err = p.state.VerifyIdToken(kid, blob, sig)
 	err = p.jwk.Verify(kid, blob, sig)
 	if err != nil {
 		//panic(err)
