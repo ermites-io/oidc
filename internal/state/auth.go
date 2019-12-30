@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"encoding/hex"
+	fmt "fmt"
 	"time"
 
 	//"github.com/ermites-io/oidc/token"
@@ -183,24 +184,30 @@ func (pa *Verifier) ValidateWithData(cookie, stateparam string, t time.Duration)
 	if !pa.stateHmacEqual([]byte(cookie), stateparam) {
 		return nilstr, nil, ErrInvalidState
 	}
+	fmt.Printf("verification state equality: ok\n")
 
 	e, err := ParseEnvelope(cookie)
 	if err != nil {
 		return nilstr, nil, err
 	}
+	fmt.Printf("verification envelope parsing: ok\n")
 
 	data, err := e.Open(pa.p)
 	if err != nil {
 		return nilstr, nil, err
 	}
+	fmt.Printf("verification crypto open: ok\n")
 
 	d, err := ParseData(data)
 	if err != nil {
 		return nilstr, nil, err
 	}
+	fmt.Printf("verification data parsing: ok\n")
 
 	// is the state expired?
 	stateCreationTime := time.Unix(d.Timestamp, 0)
+
+	fmt.Printf("verification time expiration: %v vs %v\n", time.Now(), stateCreationTime)
 	if time.Since(stateCreationTime) > t {
 		return nilstr, nil, ErrInvalidState
 	}
