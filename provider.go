@@ -244,7 +244,8 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 		return nil, nilstr, err
 	}
 
-	//fmt.Printf("ID TOKEN:\n%s\n", t.IdToken)
+	fmt.Printf("%s\n", t)
+	fmt.Printf("ID TOKEN:\n%s\n", t.IdToken)
 
 	idt, err := token.Parse(t.IdToken)
 	if err != nil {

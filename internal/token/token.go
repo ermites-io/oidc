@@ -2,7 +2,10 @@
 
 package token
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type Response struct {
 	AccessToken  string `json:"access_token"`
@@ -15,6 +18,17 @@ type Response struct {
 
 type ErrorMessage struct {
 	Error string `json:"error"`
+}
+
+func (t *Response) String() string {
+	str := fmt.Sprintf("Token Reponse:\n")
+	str += fmt.Sprintf("\tAccess Token: '%s'\n", t.AccessToken)
+	str += fmt.Sprintf("\tToken Type: '%s'\n", t.TokenType)
+	str += fmt.Sprintf("\tRefresh Token: '%s'\n", t.RefreshToken)
+	str += fmt.Sprintf("\tExpire in: %d\n", t.ExpireIn)
+	str += fmt.Sprintf("\tId Token: '%s'\n", t.IdToken)
+	str += fmt.Sprintf("\tScope: '%s'\n", t.Scope)
+	return str
 }
 
 func (t *Response) Valid() bool {
