@@ -18,8 +18,8 @@ type OpenIDConfiguration struct {
 	SubjectTypesSupported            []string `json:"subject_types_supported"`               // REQUIRED
 	IdTokenSigningAlgValuesSupported []string `json:"id_token_signing_alg_values_supported"` // REQUIRED
 	RegistrationEndpoint             string   `json:"registration_endpoint"`                 // RECOMMENDED ONLY
-	ScopeSupported                   string   `json:"scope_supported"`                       // RECOMMENDED ONLY
-	ClaimsSupported                  string   `json:"claims_supported"`                      // RECOMMENDED ONLY
+	ScopeSupported                   []string `json:"scope_supported"`                       // RECOMMENDED ONLY
+	ClaimsSupported                  []string `json:"claims_supported"`                      // RECOMMENDED ONLY
 }
 
 // TODO:
