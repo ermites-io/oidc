@@ -60,7 +60,7 @@ func Parse(token string) (*Id, error) {
 	//tok := strings.SplitN(idtoken, ".", 3)
 	tok := strings.Split(token, ".")
 
-	if len(tok) != 3 {
+	if len(token) == 0 || len(tok) != 3 {
 		//return nil, errors.New("invalid token for us")
 		return nil, ErrParse
 	}
@@ -85,6 +85,7 @@ func Parse(token string) (*Id, error) {
 	}
 	hdr.Raw = []byte(tok[0])
 	//fmt.Printf("HEADER: %v\n", h.String())
+	// TODO hdr.Validate()
 
 	//
 	// claims
@@ -100,6 +101,7 @@ func Parse(token string) (*Id, error) {
 		return nil, err
 	}
 	claims.Raw = []byte(tok[1])
+	// TODO claims.Validate()
 
 	//
 	// signature

@@ -31,6 +31,7 @@ func (t *Response) String() string {
 	return str
 }
 
+// TODO
 func (t *Response) Valid() bool {
 	switch {
 	/*`
@@ -52,9 +53,6 @@ func (t *Response) Valid() bool {
 
 func ParseResponse(buffer []byte) (*Response, error) {
 	var t Response
-
-	//fmt.Printf("Read token:\n%s\n", buffer)
-
 	err := json.Unmarshal(buffer, &t)
 	return &t, err
 }
