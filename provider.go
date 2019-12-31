@@ -200,21 +200,26 @@ func (p *Provider) ValidateIdToken(nonce string, idt *token.Id) error {
 	// TODO: call idt.Validate(issuer, clientid, nonce)
 
 	// signed Idp nonce vs state embedded nonce
-	if nonce != idt.Claims.Nonce {
-		return fmt.Errorf("invalid state nonce: %s vs idt.Nonce: %s", nonce, idt.Claims.Nonce)
+	if idt.Claims.Nonce != nonce {
+		return fmt.Errorf("invalid state idt.nonce: %s vs nonce: %s", idt.Claims.Nonce, nonce)
 	}
 
 	// Claims aud vs issuer
-	if p.clientId != idt.Claims.Aud {
+	if idt.Claims.Aud != p.clientId {
 		return fmt.Errorf("invalid aud: %s vs clientId: %s", idt.Claims.Aud, p.clientId)
 	}
 
 	// claims iss vs issuer
-	if p.issuer != idt.Claims.Iss {
+	if idt.Claims.Iss != p.issuer {
 		return fmt.Errorf("invalid iss: %s vs issuer: %s", idt.Claims.Iss, p.issuer)
 	}
 
 	// TODO: Expiration
+	expirationTime := time.Unix(int64(idt.Claims.Exp), 0)
+	nowTime := time.Now()
+	if nowTime.After(expirationTime) {
+		return fmt.Errorf("invalid exp: %v vs now: %v", expirationTime, time.Now())
+	}
 
 	return nil
 }
