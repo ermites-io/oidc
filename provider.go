@@ -89,6 +89,9 @@ func (p *Provider) buildFormToken(code string) url.Values {
 	return v
 }
 
+func (p *Provider) userInfoRequest(ctx context.Context, accessToken string) {
+}
+
 func (p *Provider) tokenRequest(ctx context.Context, code string) (*token.Response, error) {
 
 	// yes so..
@@ -196,7 +199,7 @@ func (p *Provider) RequestIdentityParams(nonce string) (cookieValue, cookiePath,
 	return
 }
 
-func (p *Provider) ValidateIdToken(nonce string, idt *token.Id) error {
+func (p *Provider) validateIdToken(nonce string, idt *token.Id) error {
 	// TODO: call idt.Validate(issuer, clientid, nonce)
 
 	// signed Idp nonce vs state embedded nonce
@@ -229,14 +232,15 @@ func (p *Provider) ValidateIdToken(nonce string, idt *token.Id) error {
 //func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.Jwt, string, error) {
 //func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.Access, string, error) {
 //func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.EndpointResponse, string, error) {
-func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.Id, string, error) {
+//func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.Id, string, error) {
+func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (string, string, error) {
 	var nilstr string
 
 	// YES, we unpack again for fuck sake!
 	nonce, err := p.state.Validate(cookie, state, DefaultStateTimeout)
 	if err != nil {
 		fmt.Printf("state '%s' is not valid: %v\n", state, err)
-		return nil, nilstr, err
+		return nilstr, nilstr, err
 	}
 	//fmt.Printf("nonce found: %s\n", nonce)
 
@@ -246,7 +250,7 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 	// return the accesstoken & refresh token too
 	t, err := p.tokenRequest(ctx, code)
 	if err != nil {
-		return nil, nilstr, err
+		return nilstr, nilstr, err
 	}
 
 	fmt.Printf("%s\n", t)
@@ -255,7 +259,7 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 	idt, err := token.Parse(t.IdToken)
 	if err != nil {
 		//panic(err)
-		return nil, nilstr, err
+		return nilstr, nilstr, err
 	}
 
 	// create functions..
@@ -263,18 +267,18 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 	err = p.jwk.Verify(kid, blob, sig)
 	if err != nil {
 		//panic(err)
-		return nil, nilstr, err
+		return nilstr, nilstr, err
 	}
 
 	// TODO here we verify the issuer, the aud, the nonce, etc.. etc.. etc..
-	err = p.ValidateIdToken(nonce, idt)
+	err = p.validateIdToken(nonce, idt)
 	if err != nil {
 		//panic(err)
-		return nil, nilstr, err
+		return nilstr, nilstr, err
 	}
 
 	// show the token.
-	return idt, nilstr, nil
+	return t.IdToken, t.AccessToken, nil
 }
 
 // return provider from the cookie.

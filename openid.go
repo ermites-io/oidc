@@ -8,7 +8,6 @@ import (
 )
 
 type OpenIDConfiguration struct {
-	// REQUIRED
 	Issuer                           string   `json:"issuer"`                                // REQUIRED
 	AuthorizationEndpoint            string   `json:"authorization_endpoint"`                // REQUIRED
 	TokenEndpoint                    string   `json:"token_endpoint"`                        // REQUIRED

@@ -19,6 +19,7 @@ type Claims struct {
 	Nonce         string `json:"nonce"`          // MUST
 	EmailVerified bool   `json:"email_verified"` // Addition to provide some additionnal "security" and avoid abuse of oauth for login (optional)
 	Azp           string `json:"azp"`            // Addition TBD
+	//AtHash
 }
 
 func (h Claims) String() string {
