@@ -57,29 +57,8 @@ func parseOpenIDConfiguration(url string) (authz, token, issuer, jwks string, er
 	jwks = o.JwksURI
 
 	return
-	// what i need to know from the
+	// TODO SANITY CHECKS
 	/*
-		authz, ok = oc["authorization_endpoint"].(string)
-		if !ok {
-			err = ErrParse
-			return
-		}
-		token, ok = oc["token_endpoint"].(string)
-		if !ok {
-			err = ErrParse
-			return
-		}
-		issuer, ok = oc["issuer"].(string)
-		if !ok {
-			err = ErrParse
-			return
-		}
-		jwks, ok = oc["jwks_uri"].(string)
-		if !ok {
-			err = ErrParse
-			return
-		}
-
 		// this MUST be code
 		//resptype, ok := oc["response_types_supported"].([]interface{}) // XXX we MUST have code inside or the provider is invalid.
 		_, ok = oc["response_types_supported"].([]interface{}) // XXX we MUST have code inside or the provider is invalid.

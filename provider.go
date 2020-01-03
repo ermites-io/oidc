@@ -242,7 +242,6 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 		fmt.Printf("state '%s' is not valid: %v\n", state, err)
 		return nilstr, nilstr, err
 	}
-	//fmt.Printf("nonce found: %s\n", nonce)
 
 	// yes so..
 	// TODO: need to give back id token, access token, refresh token (if any)
