@@ -67,16 +67,19 @@ func ParseClaims(claims64 string) (*Claims, error) {
 	//
 	claimsJson, err := base64.RawURLEncoding.DecodeString(claims64)
 	if err != nil {
-		return nil, err
+		//return nil, err
+		return nil, ErrParse
 	}
 
 	// unmarshal claims
 	if err := json.Unmarshal(claimsJson, &c); err != nil {
-		return nil, err
+		//return nil, err
+		return nil, ErrParse
 	}
 	c.Raw = []byte(claims64)
 
-	if err := c.validate(); err != nil {
+	err = c.validate()
+	if err != nil {
 		return nil, err
 	}
 

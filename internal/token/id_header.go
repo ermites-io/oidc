@@ -24,9 +24,9 @@ var supportedAlg = map[string]bool{
 // ES256 == ECDSA P-256 + SHA256
 // ES384 == ECDSA P-384 + SHA384
 // ES512 == ECDSA P-521 + SHA512
-// PS256
-// PS384
-// PS512
+// PS256 == RSASSA-PSS + SHA256
+// PS384 == RSASSA-PSS + SHA384
+// PS512 == RSASSA-PSS + SHA512
 // none => EXIT |
 //
 // unsecured JWS == len sig == 0
@@ -61,6 +61,7 @@ func (h *Header) validate() error {
 	}
 
 	_, ok := supportedAlg[h.Alg]
+	//fmt.Printf("ALG: %s OK: %v\n", h.Alg, ok)
 	if !ok {
 		return ErrParse
 	}
@@ -79,16 +80,18 @@ func ParseHeader(header64 string) (*Header, error) {
 	//
 	hdrJson, err := base64.RawURLEncoding.DecodeString(header64)
 	if err != nil {
-		return nil, err
+		//return nil, err
+		return nil, ErrParse
 	}
 	// unmarshal header
 	err = json.Unmarshal(hdrJson, &h)
 	if err != nil {
-		return nil, err
+		return nil, ErrParse
 	}
 
-	if h.validate() != nil {
-		return nil, err
+	err = h.validate()
+	if err != nil {
+		return nil, ErrParse
 	}
 
 	h.Raw = []byte(header64)
