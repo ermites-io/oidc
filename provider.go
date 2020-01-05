@@ -6,8 +6,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -40,9 +38,18 @@ type Provider struct {
 	issuer                string   // who issued the certificates.
 	scopes                []string // we might need more..scopes
 
+	// openid by default
+	oauthOnly bool
+
 	// auth parts
 	state *state.Verifier // state provider
 	jwk   jwk.Keys        // jwt verifier XXX types needs to change name
+}
+
+type Token struct {
+	Access  string
+	Refresh string
+	Id      string
 }
 
 func sha256hex(str string) string {
@@ -71,57 +78,15 @@ func NewProvider(name, urlOidcConf string) (*Provider, error) {
 	return &oidc, nil
 }
 
-func (p *Provider) GetName() string {
-	return p.name
-}
-
-func (p *Provider) buildFormToken(code string) url.Values {
-	// grantType for authorization_code flows
-	// code MUST be part of the grand types
-	grantType := "authorization_code"
-
-	v := url.Values{}
-	v.Set("grant_type", grantType)
-	v.Set("code", code)
-	v.Set("client_id", p.clientId)
-	v.Set("client_secret", p.clientSecret)
-	v.Set("redirect_uri", p.clientUrlRedirect)
-	return v
-}
-
-func (p *Provider) userInfoRequest(ctx context.Context, accessToken string) {
-}
-
-func (p *Provider) tokenRequest(ctx context.Context, code string) (*token.Response, error) {
-
-	// yes so..
-	v := p.buildFormToken(code)
-
-	// ENSURE TLS verification.
-	r, err := http.PostForm(p.urlToken, v)
-	if err != nil {
-		return nil, err
+func NewProviderOauthOnly(name, urlAuth, urlToken string) (*Provider, error) {
+	oidc := Provider{
+		name:      name,
+		urlAuth:   urlAuth,
+		urlToken:  urlToken,
+		scopes:    openidScopes,
+		oauthOnly: true,
 	}
-
-	// replied with 200 ?
-	if r.StatusCode != 200 {
-		return nil, ErrNetwork
-	}
-
-	tokenBody, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return nil, err
-	}
-	defer r.Body.Close()
-
-	//fmt.Printf("Token Body:\n%s\n", tokenBody)
-
-	t, err := token.ParseResponse(tokenBody)
-	if err != nil {
-		return nil, err
-	}
-
-	return t, nil
+	return &oidc, nil
 }
 
 func (p *Provider) SetAuth(clientId, clientSecret, clientUrlRedirect string) error {
@@ -153,30 +118,6 @@ func (p *Provider) SetAuth(clientId, clientSecret, clientUrlRedirect string) err
 	}
 
 	return nil
-}
-
-func (p *Provider) buildUrlAuth(responseType, scope, nonce, state string) (string, error) {
-	var nilstr string
-
-	// parse url defined
-	u, err := url.ParseRequestURI(p.urlAuth)
-	if err != nil {
-		return nilstr, err
-	}
-
-	// build query.
-	v := u.Query()
-
-	//v := url.Values{}
-	v.Set("client_id", p.clientId)
-	v.Set("response_type", responseType)
-	v.Set("scope", scope)
-	v.Set("nonce", nonce)
-	v.Set("state", state)
-	v.Set("redirect_uri", p.clientUrlRedirect)
-
-	u.RawQuery = v.Encode()
-	return u.String(), nil
 }
 
 // XXX TODO: probably need to be renamed properly
@@ -233,32 +174,45 @@ func (p *Provider) validateIdToken(nonce string, idt *token.Id) error {
 //func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.Access, string, error) {
 //func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.EndpointResponse, string, error) {
 //func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.Id, string, error) {
-func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (string, string, error) {
-	var nilstr string
+//func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (string, string, error) {
+func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (t *Token, err error) {
+	//var nilstr string
 
 	// YES, we unpack again for fuck sake!
 	nonce, err := p.state.Validate(cookie, state, DefaultStateTimeout)
 	if err != nil {
 		fmt.Printf("state '%s' is not valid: %v\n", state, err)
-		return nilstr, nilstr, err
+		return nil, err
+	}
+
+	// authentification is finished since we don't have token ids etc..
+	if p.oauthOnly {
+		tr, err := p.tokenRequestOauth(ctx, code, state)
+		if err != nil {
+			return nil, err
+		}
+
+		fmt.Printf("Tokens: %v\n", tr)
+
+		return tr, nil
 	}
 
 	// yes so..
 	// TODO: need to give back id token, access token, refresh token (if any)
 	// needs to see how i will wire the usercontrolled handler.
 	// return the accesstoken & refresh token too
-	t, err := p.tokenRequest(ctx, code)
+	tr, err := p.tokenRequest(ctx, code)
 	if err != nil {
-		return nilstr, nilstr, err
+		return nil, err
 	}
 
-	fmt.Printf("%s\n", t)
-	fmt.Printf("ID TOKEN:\n%s\n", t.IdToken)
+	//fmt.Printf("%s\n", t)
+	fmt.Printf("Tokens: %v\n", tr)
 
-	idt, err := token.Parse(t.IdToken)
+	idt, err := token.Parse(tr.Id)
 	if err != nil {
 		//panic(err)
-		return nilstr, nilstr, err
+		return nil, err
 	}
 
 	// create functions..
@@ -266,18 +220,23 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 	err = p.jwk.Verify(kid, blob, sig)
 	if err != nil {
 		//panic(err)
-		return nilstr, nilstr, err
+		return nil, err
 	}
 
 	// TODO here we verify the issuer, the aud, the nonce, etc.. etc.. etc..
 	err = p.validateIdToken(nonce, idt)
 	if err != nil {
 		//panic(err)
-		return nilstr, nilstr, err
+		return nil, err
 	}
 
 	// show the token.
-	return t.IdToken, t.AccessToken, nil
+	//return t.IdToken, t.AccessToken, nil
+	return tr, nil
+}
+
+func (p *Provider) GetName() string {
+	return p.name
 }
 
 // return provider from the cookie.
