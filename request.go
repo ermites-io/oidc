@@ -2,6 +2,7 @@ package oidc
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -82,7 +83,7 @@ func (p *Provider) tokenRequestOauth(ctx context.Context, code, state string) (*
 	}
 	defer r.Body.Close()
 
-	//fmt.Printf("Token Body:\n%s\n", tokenBody)
+	fmt.Printf("Token Body:\n%s\n", tokenBody)
 
 	tr, err := token.ParseResponse(tokenBody)
 	if err != nil {
