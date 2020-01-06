@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/ermites-io/oidc/internal/token"
 )
@@ -66,8 +67,17 @@ func (p *Provider) tokenRequestOauth(ctx context.Context, code, state string) (*
 	// yes so..
 	v := p.buildFormTokenOauth(code, state)
 
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.urlToken, strings.NewReader(v.Encode()))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-type", "application/x-www-form-urlencoded")
+	req.Header.Add("Accept", "application/json")
+	r, err := http.DefaultClient.Do(req)
+
 	// ENSURE TLS verification.
-	r, err := http.PostForm(p.urlToken, v)
+	//r, err := http.PostForm(p.urlToken, v)
 	if err != nil {
 		fmt.Printf("ERROR POST: %v\n", err)
 		return nil, err
