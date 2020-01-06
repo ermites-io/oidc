@@ -189,6 +189,7 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 	if p.oauthOnly {
 		tr, err := p.tokenRequestOauth(ctx, code, state)
 		if err != nil {
+			fmt.Printf("TOKEN REQUEST OAUTH ERR: %v\n", err)
 			return nil, err
 		}
 

@@ -69,16 +69,19 @@ func (p *Provider) tokenRequestOauth(ctx context.Context, code, state string) (*
 	// ENSURE TLS verification.
 	r, err := http.PostForm(p.urlToken, v)
 	if err != nil {
+		fmt.Printf("ERROR POST: %v\n", err)
 		return nil, err
 	}
 
 	// replied with 200 ?
 	if r.StatusCode != 200 {
+		fmt.Printf("ERROR STATUS: %d\n", r.StatusCode)
 		return nil, ErrNetwork
 	}
 
 	tokenBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
+		fmt.Printf("ERROR READ: %v\n", err)
 		return nil, err
 	}
 	defer r.Body.Close()
