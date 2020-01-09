@@ -155,7 +155,7 @@ where to redirect (302).
 After the user authenticated to the identity provider (google for example), it
 will be redirected back to you, through your callback url with parameters to authenticate the
 login request that originated from your login page, with the state, code and the
-cookie that the browser wil reuse to access the callback url.
+cookie that the browser will reuse to access the callback url.
 
 ```go
 ...
