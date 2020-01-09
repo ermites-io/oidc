@@ -191,8 +191,8 @@ TODO
 - HTTPs connections cert pinning.
 - PKCE support (if necessary as we already use the nonce in the state)
 
-oidc library picture
-====================
+oidc package in-use picture
+===========================
 ![oidc](/oidc_desc.svg)
 
 
