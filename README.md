@@ -3,30 +3,35 @@
 oidc
 ====
 
-An attempt at simple safe/secure OpenID Connect golang helpers package
+A simple hardened golang OpenID Connect client helpers package following/using part of the OpenID Connect Core framework.
 
-Note: while it works already, it is in a **opensource-stabilization-cleanup-alpha** phase, which means **WORK-IN-PROGRESS**. 
-Some more time is necessary to reach its first public version and will continue to be improved/fixed as needed.
-It will try to come common and slightly more problematic uses cases.
-
-This is in **NO WAY** an RFC OpenID yada yada stack or anything, it's pragmatic
-and it cover only a subset flows and features needed to implement secure login
-through a 3rd party identity provider implementing openid connect (like google,
-microsoft, ping federate, etc..).
-
-hopefully it will help others to solve that problem for their app/infrastructure/etc..
 
 Description
 ===========
 
-This is an attempt to solve an issue we had, this is how we solved it, feedback is more than welcome.
-Many new services/SaaS, try to provide the login with {Google, Microsoft, ...} functionnality, 
-openid connect / oauth is a complexity squid with many security traps.
+This is an attempt to create a simple, hardened, robust, re-usable package for delegated login process using OpenID Connect Core.
+Feedback is more than welcome.
 
-This package try to provide handlers/helpers to deal with a secure "login with" mechanism.
+Many new services/SaaS have to provide the "login with" {Google, Microsoft, ...} functionnality, openid connect / oauth is a 
+complexity squid with many security traps and potential shortcomings
 
-By only allowing the narrowed most common subset of params used and making sure they are safe/hard to attack, 
-simple to use & robust.
+It **ONLY** support and harden:
+- Authorization Code Flow
+
+We do **NOT** support (as it is not the purpose of this package):
+- Implicit Flow
+- Hybrid Flow
+
+We had to provide the functionnality as part of a project, we wanted something we understood properly, hardened by default & KISS.
+We were not at ease with x/oauth2 (although it is similar in the API) and building an overlay on top of it seemed to introduce
+too much complexity.
+
+Later the package will lean towards interroperability with x/oauth2 calls, by using/exporting to the x/oauth2 package type Token.
+
+Hopefully this might help others trying implement safe delegating login in their app/infrastructure/etc..
+
+**WORK IN PROGRESS** but close to 0.1.0.
+
 
 Requirements
 ============
@@ -36,31 +41,47 @@ Requirements
 - golang.org/x (crypto like sha3, xchacha20, etc..)
 
 
-How
-===
+How is it hardened
+==================
 
-Well, in rough terms, for services that needs to implement their RP and
-provision on their side while insuring the Idp correctly authenticated the user,
-we've put in place the following checks:
+Well, in rough terms, services that needs to implement their RP/Client and provision on their side while insuring the Idp 
+correctly authenticated the user, the library generates parameters for the developer to use in its REST or gRPC
+API in order to harden the delegated login process.
 
-- state cookie for the callback only (identify the client/browser, secure, httponly, samestrict=lax)
-- state cookie per provider initiated, a state cookie for one provider is not valid for another.
-- state cookie timeout/expiration (per provider)
-- state cookie envelope headers are protected by the AEAD.
-- state cookie is generated on the initial 302 redirect.
-- state cookie is an encrypted information valid for a single instanciated
-  provider using securely derived keys (HKDF & PBKDF2).
-- the `authorization_endpoint` url `state` parameter is `hmac-sha3-256(state cookie)`
-  (linking them as a pair effectively)
-- retrieving JWKs at the provider instantiation with TLS guarantees (once).
-- JWT crypto verification for openId Connect usage ONLY, using the provider
-  retrieved keys.
-- RS256 / EC256 support ONLY (open id connect usage ONLY).
-- JWT 'aud' / 'iss' / 'exp' / 'nonce' verification AFTER the crypto
-  verification.
+There are 2 main helpers defined: RequestIdentityParams, ValidateIdentityParams.
+
+On login, oidc generated 3 parameters:
+- cookie value 
+- cookie path value 
+- provider specific authorization_endpoint redirect location generated url
+
+On Callback, OIDC verify 3 user provided parameters:
+- cookie value
+- state
+- code.
+
+The library handles the request to the Identity provider through HTTPS ONLY using your local SSL CAs.
+
+The following steps are use to harden the protocol a tiny bit:
+
+- hardened cookie value & path are generated to be securely set by the service developer on the login redirect.
+- generated cookie values are wrapped encrypted blobs using provider specific keys & lifetime secured with xchacha20-poly1305 AEAD.
+- the state included in the generated authorization_endpoint url is associated with the generated cookie using HMAC-SHA3-512 
+  (effectively associating the browser making the authentication request).
+- encryption & HMAC keys are derived (HKDF/PBKDF2) using provider specific data (client id, client secret, etc..) at provider instantiation.
+- The state oidc cookie embed & secure the following data:
+  * provider name.
+  * openid connect nonce value.
+  * size limited user controlled data.
+  * expiration time.
+- OpenID provider JWK keys are retrieved (TLS only) and cached in memory at provider instantiation.
+- JWT crypto verification happens ONLY if the state/cookie verification pass.
+- nonce verification happens ONLY if the JWT verification pass.
+- JWT issuer, audience and expiration verification happens ONLY after all above pass.
+- RS256 / RS384 / RS512 / ES256 / ES384 / ES512 support ONLY (PS256/384/512 support coming)
 - uses ONE single callback url for all your providers.
-- KISS, simple to use API.
-- no gazillions dependencies.
+- KISS, simple to use API (3 calls).
+- no gazillions dependencies, protobuf + standard golang libraries ONLY.
 
 
 Yes, But How
@@ -158,3 +179,18 @@ cryptographic verification.
 
 your app can now create a valid session for the user that just logged in and
 create a context within your app.
+
+TODO
+====
+
+- HTTPs connections cert pinning.
+- PKCE support (if necessary as we already use the nonce in the state)
+
+
+Threat Modeling
+===============
+
+- TODO
+- mitm
+- cb bruteforce
+- token reuse

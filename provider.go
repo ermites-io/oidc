@@ -11,19 +11,12 @@ import (
 	"time"
 
 	"golang.org/x/crypto/sha3"
+	//"golang.org/x/oauth2"
 
 	// just to get the cookie..
 	"github.com/ermites-io/oidc/internal/jwk"
 	"github.com/ermites-io/oidc/internal/state"
 	"github.com/ermites-io/oidc/internal/token"
-)
-
-var (
-	DefaultStateTimeout = 5 * time.Minute
-	// default openid scopes, this plus more.
-	openidScopes = []string{
-		"openid", "email", "profile",
-	}
 )
 
 type Provider struct {
@@ -47,10 +40,28 @@ type Provider struct {
 }
 
 type Token struct {
-	Access  string
-	Refresh string
-	Id      string
+	AccessToken  string
+	RefreshToken string
+	Expiry       time.Time
+	IdToken      string // The IdToken
+
+	//OauthToken *oauth2.Token // the Oauth2 stuff TODO
 }
+
+//
+// XXX TODO we will fullfill the oauth2.TokenSource interface to see if that works
+//
+/*
+func (t *Token) Token() (*oauth2.Token, error) {
+	return t.OauthToken, nil
+}
+*/
+
+/*
+func (t *Token) IdToken() string {
+	return t.Id
+}
+*/
 
 func sha256hex(str string) string {
 	tmpHash := sha3.Sum256([]byte(str))
@@ -187,30 +198,30 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 
 	// authentification is finished since we don't have token ids etc..
 	if p.oauthOnly {
-		tr, err := p.tokenRequestOauth(ctx, code, state)
+		t, err = p.tokenRequestOauth(ctx, code, state)
 		if err != nil {
-			fmt.Printf("TOKEN REQUEST OAUTH ERR: %v\n", err)
+			//fmt.Printf("TOKEN REQUEST OAUTH ERR: %v\n", err)
 			return nil, err
 		}
 
-		fmt.Printf("Tokens: %v\n", tr)
+		fmt.Printf("Tokens: %v\n", t)
 
-		return tr, nil
+		return t, nil
 	}
 
 	// yes so..
 	// TODO: need to give back id token, access token, refresh token (if any)
 	// needs to see how i will wire the usercontrolled handler.
 	// return the accesstoken & refresh token too
-	tr, err := p.tokenRequest(ctx, code)
+	t, err = p.tokenRequest(ctx, code)
 	if err != nil {
 		return nil, err
 	}
 
 	//fmt.Printf("%s\n", t)
-	fmt.Printf("Tokens: %v\n", tr)
+	fmt.Printf("Tokens: %v\n", t)
 
-	idt, err := token.Parse(tr.Id)
+	idt, err := token.Parse(t.IdToken)
 	if err != nil {
 		//panic(err)
 		return nil, err
@@ -233,7 +244,7 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 
 	// show the token.
 	//return t.IdToken, t.AccessToken, nil
-	return tr, nil
+	return t, nil
 }
 
 func (p *Provider) GetName() string {

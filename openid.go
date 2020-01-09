@@ -23,9 +23,6 @@ type OpenIDConfiguration struct {
 
 // TODO:
 func parseOpenIDConfiguration(url string) (authz, token, issuer, jwks string, err error) {
-	//var ok bool
-
-	//oc := make(map[string]interface{})
 	var o OpenIDConfiguration
 
 	buf, err := ioutil.ReadFile(url)

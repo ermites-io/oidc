@@ -113,7 +113,7 @@ func parseJwkRSAPub(rawjwk map[string]interface{}) (*key, error) {
 		return &key{pub: &r, hash: crypto.SHA384}, nil
 	//case kty == "RSA" && alg == "RS512":
 	case len(nbuf) == 512:
-		return &key{pub: &r, hash: crypto.SHA384}, nil
+		return &key{pub: &r, hash: crypto.SHA512}, nil
 	}
 
 	//fmt.Printf("RSA Public Size: %d\n", r.Size())
@@ -238,6 +238,7 @@ func MapFromUrl(jwksUris ...string) (Keys, error) {
 			//continue
 			return nil, err
 		}
+		defer resp.Body.Close()
 
 		var respbuf bytes.Buffer
 		_, err = io.Copy(&respbuf, resp.Body)
@@ -246,7 +247,6 @@ func MapFromUrl(jwksUris ...string) (Keys, error) {
 			//continue
 			return nil, err
 		}
-		defer resp.Body.Close()
 
 		m := make(map[string]interface{})
 		//m := jwkEnv{}

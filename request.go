@@ -1,3 +1,5 @@
+// +build go1.12
+
 package oidc
 
 import (
@@ -9,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/ermites-io/oidc/internal/token"
+	//"golang.org/x/oauth2"
 )
 
 func (p *Provider) buildUrlAuth(responseType, scope, nonce, state string) (string, error) {
@@ -82,6 +85,7 @@ func (p *Provider) tokenRequestOauth(ctx context.Context, code, state string) (*
 		fmt.Printf("ERROR POST: %v\n", err)
 		return nil, err
 	}
+	defer r.Body.Close()
 
 	// replied with 200 ?
 	if r.StatusCode != 200 {
@@ -94,7 +98,6 @@ func (p *Provider) tokenRequestOauth(ctx context.Context, code, state string) (*
 		fmt.Printf("ERROR READ: %v\n", err)
 		return nil, err
 	}
-	defer r.Body.Close()
 
 	fmt.Printf("Token Body:\n%s\n", tokenBody)
 
@@ -104,9 +107,9 @@ func (p *Provider) tokenRequestOauth(ctx context.Context, code, state string) (*
 	}
 
 	t := Token{
-		Access:  tr.AccessToken,
-		Refresh: tr.RefreshToken,
-		Id:      tr.IdToken,
+		AccessToken:  tr.AccessToken,
+		RefreshToken: tr.RefreshToken,
+		IdToken:      tr.IdToken,
 	}
 
 	return &t, nil
@@ -123,6 +126,7 @@ func (p *Provider) tokenRequest(ctx context.Context, code string) (*Token, error
 	if err != nil {
 		return nil, err
 	}
+	defer r.Body.Close()
 
 	// replied with 200 ?
 	if r.StatusCode != 200 {
@@ -133,7 +137,6 @@ func (p *Provider) tokenRequest(ctx context.Context, code string) (*Token, error
 	if err != nil {
 		return nil, err
 	}
-	defer r.Body.Close()
 
 	//fmt.Printf("Token Body:\n%s\n", tokenBody)
 
@@ -143,9 +146,9 @@ func (p *Provider) tokenRequest(ctx context.Context, code string) (*Token, error
 	}
 
 	t := Token{
-		Access:  tr.AccessToken,
-		Refresh: tr.RefreshToken,
-		Id:      tr.IdToken,
+		AccessToken:  tr.AccessToken,
+		RefreshToken: tr.RefreshToken,
+		IdToken:      tr.IdToken,
 	}
 
 	return &t, nil

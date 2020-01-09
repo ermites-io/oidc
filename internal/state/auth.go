@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"encoding/hex"
-	fmt "fmt"
+	"fmt"
 	"time"
 
 	//"github.com/ermites-io/oidc/token"
@@ -180,6 +180,8 @@ func (pa *Verifier) Validate(cookie, state string, t time.Duration) (nonce strin
 //func (pa *ProviderAuth) ValidateStateWithData(cookie, stateparam string, t time.Duration) (nonce string, userData []byte, err error) {
 func (pa *Verifier) ValidateWithData(cookie, stateparam string, t time.Duration) (nonce string, userData []byte, err error) {
 	var nilstr string
+
+	fmt.Printf("verification starts: ok\n")
 
 	if !pa.stateHmacEqual([]byte(cookie), stateparam) {
 		return nilstr, nil, ErrInvalidState
