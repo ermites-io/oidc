@@ -1,5 +1,4 @@
-[![Documentation](https://godoc.org/github.com/ermites-io/oidc?status.svg)](http://godoc.org/github.com/ermites-io/oidc)      
-[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause) [![Documentation](https://godoc.org/github.com/ermites-io/oidc?status.svg)](http://godoc.org/github.com/ermites-io/oidc)      
 
 oidc
 ====
@@ -192,14 +191,16 @@ TODO
 - HTTPs connections cert pinning.
 - PKCE support (if necessary as we already use the nonce in the state)
 
+oidc library picture
+====================
+![oidc](https://raw.githubusercontent.com/ermites-io/oidc/master/oidc_desc.svg)
+
 
 Threat Modeling
 ===============
 
-- TODO
-- mitm
-- cb bruteforce
-- token reuse
+- TODO (mitm, cb bruteforce, token reuse)
+
 
 Featuring (because there is always a star in your production..)
 ===============================================================
