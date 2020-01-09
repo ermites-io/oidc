@@ -1,4 +1,5 @@
 [![Documentation](https://godoc.org/github.com/ermites-io/oidc?status.svg)](http://godoc.org/github.com/ermites-io/oidc)      
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 oidc
 ====
@@ -23,15 +24,19 @@ We do **NOT** support (as it is not the purpose of this package):
 - Hybrid Flow
 
 We had to provide the functionnality as part of a project, we wanted something we understood properly, hardened by default & KISS.
-We were not at ease with x/oauth2 (although it is similar in the API) and building an overlay on top of it seemed to introduce
+We were not at ease with `x/oauth2` (although it is similar in the API) and building an overlay on top of it seemed to introduce
 too much complexity.
 
-Later the package will lean towards interroperability with x/oauth2 calls, by using/exporting to the x/oauth2 package type Token.
+Later the package will lean towards interroperability with `x/oauth2` by using/exporting to the `x/oauth2` package types [Token.](https://godoc.org/golang.org/x/oauth2#Token)
+and [TokenSource](https://godoc.org/golang.org/x/oauth2#TokenSource).
 
 Hopefully this might help others trying implement secure delegated login in their app/infrastructure/etc..
 
-**WORK IN PROGRESS** but close to 0.1.0.
 
+Changelog
+=========
+
+* v0.1.0: initial release (MASTER NOT RELEASED YET) **WORK IN PROGRESS**
 
 Requirements
 ============
@@ -48,14 +53,14 @@ Well, in rough terms, services needs to implement their RP/Client and provision 
 correctly authenticated the user, the library generates parameters for the developer to use in its REST or gRPC
 API in order to harden the delegated login process.
 
-There are 2 main helpers defined: RequestIdentityParams, ValidateIdentityParams.
+There are 2 main helpers defined: `RequestIdentityParams`, `ValidateIdentityParams`.
 
-On login, oidc.(Provider).RequestIdentityParams generates 3 parameters:
+On login, `oidc.(Provider).RequestIdentityParams` generates 3 parameters:
 - cookie value 
 - cookie path value 
 - provider specific authorization_endpoint redirect location generated url
 
-On Callback, oidc.(Provider).ValidateIdentityParams verify 3 received parameters:
+On Callback, `oidc.(Provider).ValidateIdentityParams` verify 3 received parameters:
 - cookie value
 - state
 - code.
@@ -65,10 +70,10 @@ The library handles the request to the Identity provider through HTTPS ONLY usin
 oidc uses the following to harden the protocol a tiny bit:
 
 - hardened cookie value & path are generated to be securely set by the service developer on the login redirect.
-- generated cookie values are wrapped encrypted blobs using provider specific keys & lifetime secured with xchacha20-poly1305 AEAD.
-- the state included in the generated authorization_endpoint url is associated with the generated cookie using HMAC-SHA3-512 
+- generated cookie values are wrapped encrypted blobs using provider specific keys & lifetime and secured with [xchacha20-poly1305](https://godoc.org/golang.org/x/crypto/chacha20poly1305) AEAD.
+- the state included in the generated authorization_endpoint url is associated with the generated cookie using [HMAC](https://golang.org/pkg/crypto/hmac/)-[SHA3-512](https://godoc.org/golang.org/x/crypto/sha3).
   (effectively associating the browser making the authentication request).
-- encryption & HMAC keys are derived (HKDF/PBKDF2) using provider specific data (client id, client secret, etc..) at provider instantiation.
+- encryption & HMAC keys are derived ([HKDF](https://godoc.org/golang.org/x/crypto/hkdf)/[PBKDF2](https://godoc.org/golang.org/x/crypto/pbkdf2)) using provider specific data (client id, client secret, etc..) at provider instantiation.
 - The state oidc cookie embed & secure the following data:
   * provider name.
   * openid connect nonce value.
@@ -110,7 +115,7 @@ microsoft, err := oidc.NewProvider("microsoft", ms-openid-configuration")
 
 then add your provider auth information:
 
-```
+```go
 err = google.SetAuth("gclientid1", "googleclientsecret2", "https://login.myservice.io/cb")
 // handle error
 err = microsoft.SetAuth("msclientid", "mscliensecret", "https://login.myservice.io/cb")
@@ -195,3 +200,12 @@ Threat Modeling
 - mitm
 - cb bruteforce
 - token reuse
+
+Featuring (because there is always a star in your production..)
+===============================================================
+
+* [Go](http://golang.org) because it works.
+* Protobuf
+* [sha3](https://godoc.org/golang.org/x/crypto/sha3)
+* [xchacha20-poly1305](https://godoc.org/golang.org/x/crypto/chacha20poly1305)
+
