@@ -28,7 +28,7 @@ too much complexity.
 
 Later the package will lean towards interroperability with x/oauth2 calls, by using/exporting to the x/oauth2 package type Token.
 
-Hopefully this might help others trying implement safe delegating login in their app/infrastructure/etc..
+Hopefully this might help others trying implement secure delegated login in their app/infrastructure/etc..
 
 **WORK IN PROGRESS** but close to 0.1.0.
 
@@ -44,25 +44,25 @@ Requirements
 How is it hardened
 ==================
 
-Well, in rough terms, services that needs to implement their RP/Client and provision on their side while insuring the Idp 
+Well, in rough terms, services needs to implement their RP/Client and provision on their side while insuring the Idp 
 correctly authenticated the user, the library generates parameters for the developer to use in its REST or gRPC
 API in order to harden the delegated login process.
 
 There are 2 main helpers defined: RequestIdentityParams, ValidateIdentityParams.
 
-On login, oidc generated 3 parameters:
+On login, oidc.(Provider).RequestIdentityParams generates 3 parameters:
 - cookie value 
 - cookie path value 
 - provider specific authorization_endpoint redirect location generated url
 
-On Callback, OIDC verify 3 user provided parameters:
+On Callback, oidc.(Provider).ValidateIdentityParams verify 3 received parameters:
 - cookie value
 - state
 - code.
 
 The library handles the request to the Identity provider through HTTPS ONLY using your local SSL CAs.
 
-The following steps are use to harden the protocol a tiny bit:
+oidc uses the following to harden the protocol a tiny bit:
 
 - hardened cookie value & path are generated to be securely set by the service developer on the login redirect.
 - generated cookie values are wrapped encrypted blobs using provider specific keys & lifetime secured with xchacha20-poly1305 AEAD.
@@ -87,6 +87,7 @@ The following steps are use to harden the protocol a tiny bit:
 Yes, But How
 ============
 It goes in three steps:
+
 
 ## Register 
 
