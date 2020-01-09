@@ -4,14 +4,10 @@ package oidc
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"net/url"
 	"strings"
 	"time"
-
-	"golang.org/x/crypto/sha3"
-	//"golang.org/x/oauth2"
 
 	// just to get the cookie..
 	"github.com/ermites-io/oidc/internal/jwk"
@@ -44,8 +40,6 @@ type Token struct {
 	RefreshToken string
 	Expiry       time.Time
 	IdToken      string // The IdToken
-
-	//OauthToken *oauth2.Token // the Oauth2 stuff TODO
 }
 
 //
@@ -61,12 +55,8 @@ func (t *Token) Token() (*oauth2.Token, error) {
 func (t *Token) IdToken() string {
 	return t.Id
 }
-*/
 
-func sha256hex(str string) string {
-	tmpHash := sha3.Sum256([]byte(str))
-	return base64.StdEncoding.EncodeToString(tmpHash[:])
-}
+*/
 
 func NewProvider(name, urlOidcConf string) (*Provider, error) {
 	// parse the Oidc Configuration
@@ -101,8 +91,6 @@ func NewProviderOauthOnly(name, urlAuth, urlToken string) (*Provider, error) {
 }
 
 func (p *Provider) SetAuth(clientId, clientSecret, clientUrlRedirect string) error {
-	//var buf bytes.Buffer
-
 	// ok setup the basics
 	p.clientId = clientId
 	p.clientSecret = clientSecret // TODO to xor in memory
@@ -116,9 +104,7 @@ func (p *Provider) SetAuth(clientId, clientSecret, clientUrlRedirect string) err
 	p.clientUrlRedirectPath = u.RequestURI()
 
 	// auth contains the jwk stuff
-	//p.auth = NewProviderAuth(oidcpass, oidcsecret, jwtauth)
-	//p.auth, err = auth.NewVerifier(oidcpass, oidcsecret, p.urlJwks)
-	p.state, err = state.NewVerifier(clientId, clientSecret, p.urlJwks)
+	p.state, err = state.NewVerifier(clientId, clientSecret)
 	if err != nil {
 		return err
 	}
@@ -131,9 +117,13 @@ func (p *Provider) SetAuth(clientId, clientSecret, clientUrlRedirect string) err
 	return nil
 }
 
-// XXX TODO: probably need to be renamed properly
 func (p *Provider) RequestIdentityParams(nonce string) (cookieValue, cookiePath, IdpRedirectUrl string, err error) {
-	cookie, state, err := p.state.New(p.name, nonce)
+	return p.RequestIdentityParamsWithUserdata(nonce, nil)
+}
+
+// XXX TODO: probably need to be renamed properly
+func (p *Provider) RequestIdentityParamsWithUserdata(nonce string, userdata []byte) (cookieValue, cookiePath, IdpRedirectUrl string, err error) {
+	cookie, state, err := p.state.NewWithData(p.name, nonce, userdata)
 	if err != nil {
 		return
 	}
@@ -180,20 +170,17 @@ func (p *Provider) validateIdToken(nonce string, idt *token.Id) error {
 }
 
 // XXX TODO: this is the real authentication
-//func (p *Provider) ValidateIdentityParams(code string, sv *OidcStateValue) (accessToken, idToken string, err error) {
-//func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.Jwt, string, error) {
-//func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.Access, string, error) {
-//func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.EndpointResponse, string, error) {
-//func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (*token.Id, string, error) {
-//func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (string, string, error) {
 func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, state string) (t *Token, err error) {
-	//var nilstr string
+	t, _, err = p.ValidateIdentityParamsWithUserdata(ctx, code, cookie, state)
+	return
+}
 
+func (p *Provider) ValidateIdentityParamsWithUserdata(ctx context.Context, code, cookie, state string) (t *Token, userdata []byte, err error) {
 	// YES, we unpack again for fuck sake!
-	nonce, err := p.state.Validate(cookie, state, DefaultStateTimeout)
+	nonce, udata, err := p.state.ValidateWithData(cookie, state, DefaultStateTimeout)
 	if err != nil {
 		fmt.Printf("state '%s' is not valid: %v\n", state, err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	// authentification is finished since we don't have token ids etc..
@@ -201,12 +188,11 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 		t, err = p.tokenRequestOauth(ctx, code, state)
 		if err != nil {
 			//fmt.Printf("TOKEN REQUEST OAUTH ERR: %v\n", err)
-			return nil, err
+			return nil, nil, err
 		}
 
 		fmt.Printf("Tokens: %v\n", t)
-
-		return t, nil
+		return t, udata, nil
 	}
 
 	// yes so..
@@ -215,7 +201,7 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 	// return the accesstoken & refresh token too
 	t, err = p.tokenRequest(ctx, code)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	//fmt.Printf("%s\n", t)
@@ -224,7 +210,7 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 	idt, err := token.Parse(t.IdToken)
 	if err != nil {
 		//panic(err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	// create functions..
@@ -232,19 +218,19 @@ func (p *Provider) ValidateIdentityParams(ctx context.Context, code, cookie, sta
 	err = p.jwk.Verify(kid, blob, sig)
 	if err != nil {
 		//panic(err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	// TODO here we verify the issuer, the aud, the nonce, etc.. etc.. etc..
 	err = p.validateIdToken(nonce, idt)
 	if err != nil {
 		//panic(err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	// show the token.
 	//return t.IdToken, t.AccessToken, nil
-	return t, nil
+	return t, udata, nil
 }
 
 func (p *Provider) GetName() string {

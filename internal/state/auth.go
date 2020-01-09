@@ -14,16 +14,12 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-//type ProviderAuth struct {
 type Verifier struct {
 	p []byte // password
 	s []byte // secret
-	//jwk jwk.Keys // jwt verifier XXX types needs to change name
 }
 
-//func NewProviderAuth(password, secret []byte, jwkUrl string) (*ProviderAuth, error) {
-//func NewVerifier(password, secret []byte, jwkUrl string) (*Verifier, error) {
-func NewVerifier(clientId, clientSecret string, jwkUrl string) (*Verifier, error) {
+func NewVerifier(clientId, clientSecret string) (*Verifier, error) {
 	var buf bytes.Buffer
 
 	// state auth is build from the client secret & client id.
@@ -68,20 +64,12 @@ func NewVerifier(clientId, clientSecret string, jwkUrl string) (*Verifier, error
 		return nil, err
 	}
 
-	/*
-		jwkauth, err := jwk.MapFromUrl(jwkUrl)
-		if err != nil {
-			return nil, err
-		}
-	*/
-
 	pTmp := sha3.Sum512([]byte(oidcpass))
 	sTmp := sha3.Sum512([]byte(oidcsecret))
 
 	return &Verifier{
 		p: pTmp[:], // this is to encrypt the state
 		s: sTmp[:], // this is for the hmac part that goes in the URL
-		//jwk: jwkauth,
 	}, nil
 }
 
@@ -95,7 +83,6 @@ func hmac256(key, data []byte) ([]byte, error) {
 	return mac, nil
 }
 
-//func (pa *ProviderAuth) stateHmac(data []byte) (string, error) {
 func (pa *Verifier) stateHmac(data []byte) (string, error) {
 	var nilstr string
 
@@ -107,7 +94,6 @@ func (pa *Verifier) stateHmac(data []byte) (string, error) {
 	return hex.EncodeToString(mac), nil
 }
 
-//func (pa *ProviderAuth) stateHmacEqual(data []byte, stateHmac string) bool {
 func (pa *Verifier) stateHmacEqual(data []byte, stateHmac string) bool {
 	mac, err := hmac256(pa.s, data)
 	if err != nil {
@@ -122,7 +108,6 @@ func (pa *Verifier) stateHmacEqual(data []byte, stateHmac string) bool {
 	return hmac.Equal(mac, machex)
 }
 
-//func (pa *ProviderAuth) State(provider, oidcNonce string) (string, string, error) {
 func (pa *Verifier) New(provider, oidcNonce string) (string, string, error) {
 	return pa.NewWithData(provider, oidcNonce, nil)
 }
@@ -131,7 +116,6 @@ func (pa *Verifier) New(provider, oidcNonce string) (string, string, error) {
 //func (oa *ProviderAuth) State(password, secret []byte, oidcNonce string) (*OidcStateValue, error) {
 // let's limit that state otherwise...
 // let's limit nonceSize also
-//func (pa *ProviderAuth) StateWithData(provider, nonce string, userData []byte) (string, string, error) {
 func (pa *Verifier) NewWithData(provider, nonce string, userData []byte) (string, string, error) {
 	var nilstr string
 
@@ -171,13 +155,11 @@ func (pa *Verifier) NewWithData(provider, nonce string, userData []byte) (string
 	return cookie, state, nil
 }
 
-//func (pa *ProviderAuth) ValidateState(cookie, state string, t time.Duration) (nonce string, err error) {
 func (pa *Verifier) Validate(cookie, state string, t time.Duration) (nonce string, err error) {
 	n, _, err := pa.ValidateWithData(cookie, state, t)
 	return n, err
 }
 
-//func (pa *ProviderAuth) ValidateStateWithData(cookie, stateparam string, t time.Duration) (nonce string, userData []byte, err error) {
 func (pa *Verifier) ValidateWithData(cookie, stateparam string, t time.Duration) (nonce string, userData []byte, err error) {
 	var nilstr string
 
@@ -216,10 +198,3 @@ func (pa *Verifier) ValidateWithData(cookie, stateparam string, t time.Duration)
 
 	return d.Nonce, d.Userdata, nil
 }
-
-//func (pa *Verifier) VerifyIdToken(idt *token.Id) error {
-/*
-func (pa *Verifier) VerifyIdToken(kid string, input, sig []byte) error {
-	//return pa.jwk.Verify(kid, input, sig)
-}
-*/
