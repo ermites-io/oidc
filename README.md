@@ -193,7 +193,7 @@ TODO
 
 oidc library picture
 ====================
-![oidc](https://raw.githubusercontent.com/ermites-io/oidc/master/oidc_desc.svg)
+![oidc](https://raw.githubusercontent.com/ermites-io/oidc/master/oidc_desc.svg?sanitize=1)
 
 
 Threat Modeling
