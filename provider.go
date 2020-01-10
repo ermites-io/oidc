@@ -43,7 +43,7 @@ type Token struct {
 }
 
 //
-// XXX TODO we will fullfill the oauth2.TokenSource interface to see if that works
+// XXX TODO we will fulfill the oauth2.TokenSource interface to see if that works
 //
 /*
 func (t *Token) Token() (*oauth2.Token, error) {

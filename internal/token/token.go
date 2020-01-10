@@ -21,7 +21,7 @@ type ErrorMessage struct {
 }
 
 func (t *Response) String() string {
-	str := fmt.Sprintf("Token Reponse:\n")
+	str := fmt.Sprintf("Token Response:\n")
 	str += fmt.Sprintf("\tAccess Token: '%s'\n", t.AccessToken)
 	str += fmt.Sprintf("\tToken Type: '%s'\n", t.TokenType)
 	str += fmt.Sprintf("\tRefresh Token: '%s'\n", t.RefreshToken)
