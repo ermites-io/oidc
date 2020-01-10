@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"time"
 
-	//"github.com/ermites-io/oidc/token"
 	"golang.org/x/crypto/hkdf"
 	"golang.org/x/crypto/sha3"
 )

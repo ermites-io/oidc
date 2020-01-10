@@ -3,7 +3,6 @@ syntax = "proto3";
 package state;
 
 // that gives the cookie..
-//message StateCookieValue {
 message Envelope {
 	string provider = 1; // hash(provider) (protected by AEAD)
 	bytes salt = 2; // key derivation     (protected by AEAD)
@@ -12,7 +11,6 @@ message Envelope {
 }
 
 // that give the envelope payload
-//message StateValue {
 message Data {
 	int64 timestamp = 1; // that will be the time when it's expired
 	string nonce = 2; // oidc nonce sent in the redirect given in the beginning

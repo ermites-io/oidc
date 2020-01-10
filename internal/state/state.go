@@ -55,23 +55,11 @@ func (m *Data) Pack() ([]byte, error) {
 }
 
 // unmarshal
-//func UnpackData(blob []byte) (*Data, error) {
 func ParseData(blob []byte) (*Data, error) {
 	var sd Data
 	err := proto.Unmarshal(blob, &sd)
 	return &sd, err
 }
-
-/*
-func UnpackStateData(blob []byte) (*StateData, error) {
-	sd := StateData{}
-	err = proto.Unmarshal(blob, &sd)
-	if err != nil {
-		return nil, err
-	}
-	return sd, nil
-}
-*/
 
 //
 //
@@ -171,7 +159,6 @@ func (m *Envelope) Pack() (string, error) {
 	return s64, nil
 }
 
-//func UnpackEnvelope(envelope string) (*Envelope, error) {
 func ParseEnvelope(packed string) (*Envelope, error) {
 	var e Envelope
 
