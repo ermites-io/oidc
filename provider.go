@@ -42,22 +42,6 @@ type Token struct {
 	IdToken      string // The IdToken
 }
 
-//
-// XXX TODO we will fulfill the oauth2.TokenSource interface to see if that works
-//
-/*
-func (t *Token) Token() (*oauth2.Token, error) {
-	return t.OauthToken, nil
-}
-*/
-
-/*
-func (t *Token) IdToken() string {
-	return t.Id
-}
-
-*/
-
 func NewProvider(name, urlOidcConf string) (*Provider, error) {
 	// parse the Oidc Configuration
 	authz, token, issuer, jwks, err := parseOpenIDConfiguration(urlOidcConf)
@@ -75,7 +59,6 @@ func NewProvider(name, urlOidcConf string) (*Provider, error) {
 		scopes:   openidScopes,
 	}
 
-	//fmt.Printf("PROVIDER: %v\n", oidc)
 	return &oidc, nil
 }
 

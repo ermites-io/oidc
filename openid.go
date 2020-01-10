@@ -5,6 +5,7 @@ package oidc
 import (
 	"encoding/json"
 	"io/ioutil"
+	"net/http"
 )
 
 type OpenIDConfiguration struct {
@@ -25,10 +26,23 @@ type OpenIDConfiguration struct {
 func parseOpenIDConfiguration(url string) (authz, token, issuer, jwks string, err error) {
 	var o OpenIDConfiguration
 
-	buf, err := ioutil.ReadFile(url)
+	resp, err := http.Get(url)
 	if err != nil {
 		return
 	}
+	defer resp.Body.Close()
+
+	buf, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+
+	/*
+		buf, err := ioutil.ReadFile(url)
+		if err != nil {
+			return
+		}
+	*/
 
 	//err = json.Unmarshal(buf, &oc)
 	err = json.Unmarshal(buf, &o)

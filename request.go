@@ -9,9 +9,9 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/ermites-io/oidc/internal/token"
-	//"golang.org/x/oauth2"
 )
 
 func (p *Provider) buildUrlAuth(responseType, scope, nonce, state string) (string, error) {
@@ -149,6 +149,7 @@ func (p *Provider) tokenRequest(ctx context.Context, code string) (*Token, error
 		AccessToken:  tr.AccessToken,
 		RefreshToken: tr.RefreshToken,
 		IdToken:      tr.IdToken,
+		Expiry:       time.Now().Add(time.Duration(tr.ExpireIn) * time.Second),
 	}
 
 	return &t, nil
