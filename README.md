@@ -1,4 +1,6 @@
-[![Documentation](https://godoc.org/github.com/ermites-io/oidc?status.svg)](http://godoc.org/github.com/ermites-io/oidc) [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause) 
+[![Documentation](https://godoc.org/github.com/ermites-io/oidc?status.svg)](http://godoc.org/github.com/ermites-io/oidc) 
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause) 
+[![Go Report Card](https://goreportcard.com/badge/github.com/ermites-io/oidc)](https://goreportcard.com/report/github.com/ermites-io/oidc)
 
 oidc
 ====
