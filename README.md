@@ -6,6 +6,7 @@ oidc
 ====
 
 A simple hardened golang OpenID Connect client helpers package following/using part of the OpenID Connect Core framework.
+(work in progress, but usable now)
 
 
 Description
@@ -190,8 +191,15 @@ create a context within your app.
 TODO
 ====
 
-- HTTPs connections cert pinning.
+- HTTPs connections cert pinning (if possible).
+- Cleanup Errors
+- Wrap x/oauth2 Token & TokenSource
+- Provider UserInfo requests
+- OpenID Discovery & Registration.
+- OpenID logout.
 - PKCE support (if necessary as we already use the nonce in the state)
+- OpenID Connect certification framework testing.
+- STAY AS SIMPLE AS POSSIBLE, LIMIT OPTIONS AND FANCY SPACESHIP DECK BUTTONS but RELIABLE.
 
 oidc package in-use picture
 ===========================
@@ -202,6 +210,19 @@ Threat Modeling
 ===============
 
 - TODO (mitm, cb bruteforce, token reuse)
+
+
+Other OIDC packages
+===================
+
+- [https://github.com/coreos/go-oidc](https://github.com/coreos/go-oidc)
+- [https://github.com/ory/hydra](https://github.com/ory/hydra)
+- [https://github.com/bwplotka/oidc](https://github.com/bwplotka/oidc)
+- [https://godoc.org/github.com/hooklift/oidclient](https://godoc.org/github.com/hooklift/oidclient)
+- [https://github.com/pkoenig10/oidc-rp](https://github.com/pkoenig10/oidc-rp) (similar to our example [oidc-ogre](https://github.com/ermites-io/oidc-ogre))
+- [https://github.com/Kopano-dev/oidc-go](https://github.com/Kopano-dev/oidc-go)
+- [https://github.com/HailorS/go-oidc](https://github.com/HailorS/go-oidc)
+- probably other out there I haven't seen.. this is just a quick search...
 
 
 Featuring (because there is always a star in your production..)
