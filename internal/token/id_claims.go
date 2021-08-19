@@ -19,7 +19,6 @@ type Claims struct {
 	Aud           string `json:"aud"` // REQUIRED
 	Exp           int    `json:"exp"` // REQUIRED
 	Iat           int    `json:"iat"` // REQUIRED
-	Tid           string `json:"tid"` // Microsoft Tenant ID: Needed to validate microsoft iss
 	Email         string `json:"email"`
 	Nonce         string `json:"nonce"`          // MUST
 	EmailVerified bool   `json:"email_verified"` // Addition to provide some additionnal "security" and avoid abuse of oauth for login (optional)
