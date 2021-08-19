@@ -76,24 +76,23 @@ func (jwe jwkEntry) parseRSA() (*key, error) {
 		N: &n,
 	}
 
-	/* // there is no alg...
-	switch {
-	case jwe.RsaAlg == "RS256" && len(nbuf) == 256:
+	switch jwe.RsaAlg {
+	case "RS256":
 		return &key{pub: &r, hash: crypto.SHA256}, nil
-	case jwe.RsaAlg == "RS384" && len(nbuf) == 384:
+	case "RS384":
 		return &key{pub: &r, hash: crypto.SHA384}, nil
-	case jwe.RsaAlg == "RS512" && len(nbuf) == 512:
+	case "RS512":
 		return &key{pub: &r, hash: crypto.SHA512}, nil
-	}
-	*/
-
-	switch len(nbuf) {
-	case 256:
-		return &key{pub: &r, hash: crypto.SHA256}, nil
-	case 384:
-		return &key{pub: &r, hash: crypto.SHA384}, nil
-	case 512:
-		return &key{pub: &r, hash: crypto.SHA512}, nil
+	default:
+		// If we don't know RsaAlg
+		// we try to determine key len
+		switch len(nbuf) {
+		case 256:
+			return &key{pub: &r, hash: crypto.SHA256}, nil
+		case 384:
+			return &key{pub: &r, hash: crypto.SHA384}, nil
+		case 512:
+			return &key{pub: &r, hash: crypto.SHA512}, nil
 	}
 
 	return nil, ErrParse

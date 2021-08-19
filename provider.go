@@ -82,19 +82,21 @@ func (p *Provider) SetAuth(clientId, clientSecret, clientUrlRedirect string) err
 	// want to avoid parsing all the time
 	u, err := url.ParseRequestURI(p.clientUrlRedirect)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot parse callback URL: %v", err)
 	}
 	p.clientUrlRedirectPath = u.RequestURI()
 
 	// auth contains the jwk stuff
 	p.state, err = state.NewVerifier(clientId, clientSecret)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot verify client id and secret: %v", err)
 	}
 
-	p.jwk, err = jwk.MapFromUrl(p.urlJwks)
-	if err != nil {
-		return err
+	if !p.oauthOnly {
+		p.jwk, err = jwk.MapFromUrl(p.urlJwks)
+		if err != nil {
+			return fmt.Errorf("cannot parse callback URL: %v", err)
+		}
 	}
 
 	return nil
@@ -162,19 +164,17 @@ func (p *Provider) ValidateIdentityParamsWithUserdata(ctx context.Context, code,
 	// YES, we unpack again for fuck sake!
 	nonce, udata, err := p.state.ValidateWithData(cookie, state, DefaultStateTimeout)
 	if err != nil {
-		fmt.Printf("state '%s' is not valid: %v\n", state, err)
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("invalid state: %v", err)
 	}
 
 	// authentification is finished since we don't have token ids etc..
 	if p.oauthOnly {
 		t, err = p.tokenRequestOauth(ctx, code, state)
 		if err != nil {
-			//fmt.Printf("TOKEN REQUEST OAUTH ERR: %v\n", err)
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("cannot create oauth request: %v", err)
 		}
 
-		fmt.Printf("Tokens: %v\n", t)
+		//fmt.Printf("Tokens: %v\n", t)
 		return t, udata, nil
 	}
 
@@ -184,15 +184,14 @@ func (p *Provider) ValidateIdentityParamsWithUserdata(ctx context.Context, code,
 	// return the accesstoken & refresh token too
 	t, err = p.tokenRequest(ctx, code)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("error requesting token: %v", err)
 	}
 
 	//fmt.Printf("%s\n", t)
-	fmt.Printf("Tokens: %v\n", t)
+	//fmt.Printf("Tokens: %v\n", t)
 
 	idt, err := token.Parse(t.IdToken)
 	if err != nil {
-		//panic(err)
 		return nil, nil, err
 	}
 
@@ -200,15 +199,13 @@ func (p *Provider) ValidateIdentityParamsWithUserdata(ctx context.Context, code,
 	kid, blob, sig := idt.GetVerifyInfo()
 	err = p.jwk.Verify(kid, blob, sig)
 	if err != nil {
-		//panic(err)
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("cannot verify jwk: %v", err)
 	}
 
 	// TODO here we verify the issuer, the aud, the nonce, etc.. etc.. etc..
 	err = p.validateIdToken(nonce, idt)
 	if err != nil {
-		//panic(err)
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("cannot validate idToken: %v", err)
 	}
 
 	// show the token.
@@ -226,7 +223,7 @@ func GetProvider(cookie string) (string, error) {
 
 	e, err := state.ParseEnvelope(cookie)
 	if err != nil {
-		return nilstr, err
+		return nilstr, fmt.Errorf("cannot parse envelope: %v", err)
 	}
 
 	return e.GetProvider(), nil
