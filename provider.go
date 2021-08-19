@@ -139,19 +139,8 @@ func (p *Provider) validateIdToken(nonce string, idt *token.Id) error {
 		return fmt.Errorf("invalid aud: %s vs clientId: %s", idt.Claims.Aud, p.clientId)
 	}
 
-	// Some issuers like with microsoft oauth2.0 can have dynamic iss values.
-	var issuer string
-
-	// if we are using microsoft - the provider issuer is containing a dynamic {tenantid} part.
-	// The tenant id is provided in another claim (tid). We rebuild the issuer using tid and compare to the iss claim.
-	if strings.Contains(p.issuer, "{tenantid}") && len(idt.Claims.Tid) > 0 {
-		issuer = strings.Replace(p.issuer, "{tenantid}", idt.Claims.Tid, 1)
-	} else {
-		issuer = p.issuer
-	}
-
 	// claims iss vs issuer
-	if idt.Claims.Iss != issuer {
+	if idt.Claims.Iss != p.issuer {
 		return fmt.Errorf("invalid iss: %s vs issuer: %s", idt.Claims.Iss, p.issuer)
 	}
 
